@@ -1,0 +1,100 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { isManager } from "@/lib/data/auth";
+
+// 회원 등록 (운영진 전용 — RLS의 is_manager()로 강제)
+export async function createMember(formData: FormData) {
+  if (!(await isManager())) return;
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return;
+
+  const position1 = String(formData.get("position1") ?? "MF");
+  const position2 = String(formData.get("position2") ?? "");
+  const foot = String(formData.get("foot") ?? "R");
+  const role = String(formData.get("role") ?? "member");
+
+  const supabase = await createClient();
+
+  const { data: member, error } = await supabase
+    .from("members")
+    .insert({
+      name,
+      position1,
+      position2: position2 || null,
+      foot,
+      role,
+    })
+    .select("id")
+    .single();
+
+  if (error || !member) {
+    console.error("createMember", error);
+    return;
+  }
+
+  // 유니폼별 등번호 (빨검 / 흰파)
+  const numbers: { member_id: string; uniform: string; number: number }[] = [];
+  for (const uniform of ["빨검", "흰파"]) {
+    const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
+    if (raw) {
+      const n = parseInt(raw, 10);
+      if (!Number.isNaN(n)) numbers.push({ member_id: member.id, uniform, number: n });
+    }
+  }
+  if (numbers.length) {
+    await supabase.from("member_numbers").insert(numbers);
+  }
+
+  revalidatePath("/members");
+  redirect(`/members?toast=${encodeURIComponent(`${name} 회원이 등록됐어요`)}`);
+}
+
+// 회원 수정 (운영진)
+export async function updateMember(formData: FormData) {
+  if (!(await isManager())) return;
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !name) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("members")
+    .update({
+      name,
+      position1: String(formData.get("position1") ?? "MF"),
+      position2: String(formData.get("position2") ?? "") || null,
+      foot: String(formData.get("foot") ?? "R"),
+      role: String(formData.get("role") ?? "member"),
+    })
+    .eq("id", id);
+
+  // 등번호 교체 (기존 삭제 후 재삽입)
+  await supabase.from("member_numbers").delete().eq("member_id", id);
+  const numbers: { member_id: string; uniform: string; number: number }[] = [];
+  for (const uniform of ["빨검", "흰파"]) {
+    const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
+    if (raw) {
+      const n = parseInt(raw, 10);
+      if (!Number.isNaN(n)) numbers.push({ member_id: id, uniform, number: n });
+    }
+  }
+  if (numbers.length) await supabase.from("member_numbers").insert(numbers);
+
+  revalidatePath("/members");
+  revalidatePath(`/members/${id}`);
+  redirect(`/members/${id}?toast=${encodeURIComponent("수정됐어요")}`);
+}
+
+// 회원 삭제 (운영진)
+export async function deleteMember(formData: FormData) {
+  if (!(await isManager())) return;
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from("members").delete().eq("id", id);
+  revalidatePath("/members");
+  redirect(`/members?toast=${encodeURIComponent("회원이 삭제됐어요")}`);
+}

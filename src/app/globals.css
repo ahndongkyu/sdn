@@ -1,0 +1,254 @@
+@import "tailwindcss";
+
+/* ===== 라이트 = 일렉트릭 블루 (디자이너 확정 토큰) ===== */
+:root {
+  --sdn-bg: #f4f6fa;
+  --sdn-surface: #ffffff;
+  --sdn-surface-2: #edf0f5;
+  --sdn-surface-3: #e7ebf3;
+
+  --sdn-ink: #131a2b;
+  --sdn-navy: #14213d;
+  --sdn-text: #2a3242;
+  --sdn-muted: #6b7280;
+  --sdn-muted-2: #9198a5;
+  --sdn-faint: #a7abb5;
+
+  --sdn-blue: #2e6bff;
+  --sdn-blue-strong: #1e4fcc;
+  --sdn-blue-tint: #e6edff;
+  --sdn-blue-tint-tx: #2e6bff;
+
+  --sdn-pink: #f4a6c0;
+  --sdn-danger: #e5484d;
+
+  --sdn-fw-tx: #1e4fcc; --sdn-fw-bg: #e6edff;
+  --sdn-mf-tx: #14213d; --sdn-mf-bg: #e4e8f0;
+  --sdn-df-tx: #6b7280; --sdn-df-bg: #eef1f6;
+
+  --sdn-hero-grad: linear-gradient(158deg, #1e2f55 0%, #14213d 62%, #0f1830 100%);
+  --sdn-hero-glow: radial-gradient(circle, rgba(46, 107, 255, 0.5), transparent 70%);
+  --sdn-hero-border: transparent;
+  --sdn-hero-accent: #7fa8ff;
+  --sdn-hero-num: #5a8cff;
+  --sdn-hero-chip: rgba(255, 255, 255, 0.09);
+  --sdn-hero-line: rgba(255, 255, 255, 0.11);
+  --sdn-on-hero: #ffffff;
+  --sdn-on-hero-sub: rgba(255, 255, 255, 0.55);
+
+  --sdn-divider: #eef1f6;
+  --sdn-border: #e4e8f0;
+  --sdn-border-blue: #dce7ff;
+  --sdn-dash: #d4def2;
+
+  --sdn-nav-bg: rgba(255, 255, 255, 0.94);
+  --sdn-nav-border: #e6eaf2;
+
+  --sdn-shadow-sm: 0 3px 12px -8px rgba(20, 33, 61, 0.15);
+  --sdn-shadow-md: 0 8px 22px -14px rgba(20, 33, 61, 0.13);
+  --sdn-shadow-lg: 0 10px 28px -14px rgba(20, 33, 61, 0.14);
+  --sdn-shadow-hero: 0 22px 44px -20px rgba(20, 33, 61, 0.6);
+  --sdn-shadow-btn: 0 6px 14px -6px rgba(46, 107, 255, 0.5);
+
+  --sdn-avatar-stroke: #a6adbe;
+
+  /* 남색 강조 패널 (히어로/로그인/스코어 카드) — 라이트/다크 공통으로 항상 짙은 남색 유지.
+     --sdn-navy(헤딩 텍스트 색)와는 별개 변수라 다크모드에서 뒤집히지 않음 */
+  --sdn-panel: #14213d;
+  --sdn-panel-soft: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== 다크 (TURN 5) — next-themes .dark ===== */
+.dark {
+  --sdn-bg: #0c1220;
+  --sdn-surface: #161e30;
+  --sdn-surface-2: rgba(255, 255, 255, 0.06);
+  --sdn-surface-3: rgba(255, 255, 255, 0.06);
+
+  --sdn-ink: #eaf0fa;
+  --sdn-navy: #eaf0fa;
+  --sdn-text: #d6dcea;
+  --sdn-muted: #9aa3b5;
+  --sdn-muted-2: #8b93a7;
+  --sdn-faint: #5c6478;
+
+  --sdn-blue: #4c82ff;
+  --sdn-blue-strong: #6c9bff;
+  --sdn-blue-tint: rgba(76, 130, 255, 0.16);
+  --sdn-blue-tint-tx: #6c9bff;
+
+  --sdn-pink: #f4a6c0;
+  --sdn-danger: #f0666b;
+
+  --sdn-fw-tx: #6c9bff; --sdn-fw-bg: rgba(76, 130, 255, 0.16);
+  --sdn-mf-tx: #eaf0fa; --sdn-mf-bg: rgba(255, 255, 255, 0.08);
+  --sdn-df-tx: #8b93a7; --sdn-df-bg: rgba(255, 255, 255, 0.06);
+
+  --sdn-hero-grad: linear-gradient(158deg, #1e2b48 0%, #141e34 62%, #0f1830 100%);
+  --sdn-hero-glow: radial-gradient(circle, rgba(76, 130, 255, 0.4), transparent 70%);
+  --sdn-hero-border: rgba(76, 130, 255, 0.14);
+  --sdn-hero-accent: #6c9bff;
+  --sdn-hero-num: #6c9bff;
+  --sdn-hero-chip: rgba(255, 255, 255, 0.07);
+  --sdn-hero-line: rgba(255, 255, 255, 0.1);
+  --sdn-on-hero: #ffffff;
+  --sdn-on-hero-sub: rgba(255, 255, 255, 0.55);
+
+  --sdn-divider: rgba(255, 255, 255, 0.08);
+  --sdn-border: rgba(255, 255, 255, 0.06);
+  --sdn-border-blue: rgba(76, 130, 255, 0.3);
+  --sdn-dash: rgba(76, 130, 255, 0.3);
+
+  --sdn-nav-bg: rgba(15, 22, 38, 0.96);
+  --sdn-nav-border: rgba(255, 255, 255, 0.06);
+
+  --sdn-shadow-sm: 0 3px 12px -8px rgba(0, 0, 0, 0.5);
+  --sdn-shadow-md: 0 8px 22px -14px rgba(0, 0, 0, 0.5);
+  --sdn-shadow-lg: 0 10px 28px -14px rgba(0, 0, 0, 0.5);
+  --sdn-shadow-hero: 0 22px 44px -20px rgba(0, 0, 0, 0.6);
+  --sdn-shadow-btn: 0 6px 14px -6px rgba(76, 130, 255, 0.45);
+
+  --sdn-avatar-stroke: #8b93a7;
+
+  /* 남색 강조 패널 — 다크에서도 페이지 배경(#0c1220)보다 살짝 밝은 짙은 남색 유지 */
+  --sdn-panel: #1b2744;
+  --sdn-panel-soft: rgba(255, 255, 255, 0.14);
+}
+
+/* ===== Tailwind 토큰 매핑 (유틸 클래스가 위 변수 참조 → 다크 자동 전환) ===== */
+@theme inline {
+  --color-bg: var(--sdn-bg);
+  --color-card: var(--sdn-surface);
+  --color-sunken: var(--sdn-surface-2);
+  --color-avatar: var(--sdn-surface-3);
+  --color-panel: var(--sdn-navy);
+  --color-accent: var(--sdn-blue);
+  --color-accent-strong: var(--sdn-blue-strong);
+  --color-tint: var(--sdn-blue-tint);
+  --color-pink: var(--sdn-pink);
+  --color-danger: var(--sdn-danger);
+  --color-fg: var(--sdn-navy);
+  --color-body: var(--sdn-text);
+  --color-muted: var(--sdn-muted);
+  --color-subtle: var(--sdn-muted-2);
+  --color-faint: var(--sdn-faint);
+  --color-line: var(--sdn-border);
+  --color-divider: var(--sdn-divider);
+  --color-borderblue: var(--sdn-border-blue);
+  --color-onpanel: var(--sdn-on-hero);
+  --color-onpanelmuted: var(--sdn-on-hero-sub);
+
+  /* 포지션 태그 (디자이너: FW 블루 / MF 네이비 / DF 뉴트럴) */
+  --color-fw: var(--sdn-fw-tx);
+  --color-mf: var(--sdn-mf-tx);
+  --color-df: var(--sdn-df-tx);
+  /* 피치 칩 색 (기능 구분 — 고정) */
+  --color-pos-gk: #ef9f27;
+  --color-pos-df: #3a7bd5;
+  --color-pos-mf: #639922;
+  --color-pos-fw: #d85a30;
+  --color-win: #1d9e75;
+  --color-draw: #888780;
+  --color-lose: var(--sdn-danger);
+
+  /* 구 토큰 호환 (마이그레이션 중) — 남색 패널은 전용 --sdn-panel 사용(헤딩 텍스트용 --sdn-navy와 분리) */
+  --color-navy: var(--sdn-panel);
+  --color-navy-soft: var(--sdn-panel-soft);
+  --color-navy-muted: var(--sdn-on-hero-sub);
+  --color-red: var(--sdn-blue);
+  --color-red-soft: var(--sdn-blue-tint);
+  --color-blue: var(--sdn-blue);
+  /* bg-ink/border-ink는 토스트·영상버튼처럼 항상 짙은 고정색이 필요 (헤딩 텍스트와 분리) */
+  --color-ink: #131a2b;
+  --color-surface-0: var(--sdn-bg);
+  --color-surface-1: var(--sdn-surface-2);
+  --color-surface-2: var(--sdn-surface);
+
+  --font-sans: var(--font-sans-kr);
+}
+
+html { height: 100%; }
+body {
+  background: var(--sdn-bg);
+  color: var(--sdn-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--sdn-bg);
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--sdn-border);
+  background: var(--sdn-surface);
+  padding: 0.625rem 0.75rem;
+  font-size: 14px;
+  color: var(--sdn-ink);
+}
+.input:focus { outline: none; border-color: var(--sdn-blue); }
+
+/* ===== 효과 클래스 ===== */
+/* 히어로(시즌 성적) 카드 — 딥네이비 그라데이션 + 우상단 글로우 */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--sdn-hero-grad);
+  border: 1px solid var(--sdn-hero-border);
+  box-shadow: var(--sdn-shadow-hero);
+  color: var(--sdn-on-hero);
+}
+.hero-card::before {
+  content: "";
+  position: absolute;
+  top: -46px;
+  right: -34px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: var(--sdn-hero-glow);
+  pointer-events: none;
+}
+/* 브랜드 로고 — 블루→네이비 그라데이션 + 글로우 */
+.brand-logo {
+  background: linear-gradient(150deg, var(--sdn-blue), #14213d);
+  box-shadow: 0 7px 16px -6px rgba(46, 107, 255, 0.5);
+  color: #fff;
+}
+/* 프로필 카드 그라데이션 (더보기) */
+.profile-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(150deg, #1e2f55, #14213d);
+  box-shadow: 0 16px 34px -18px rgba(20, 33, 61, 0.5);
+}
+.profile-card::before {
+  content: "";
+  position: absolute;
+  top: -30px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(46, 107, 255, 0.45), transparent 70%);
+  pointer-events: none;
+}
+/* 흰 카드 그림자 */
+.soft-card { box-shadow: var(--sdn-shadow-md); }
+.soft-card-lg { box-shadow: var(--sdn-shadow-lg); }
+/* 파랑 버튼 글로우 */
+.btn-glow { box-shadow: var(--sdn-shadow-btn); }
+/* 하단 네비 글래스 */
+.glass-nav {
+  background: var(--sdn-nav-bg);
+  border-top: 1px solid var(--sdn-nav-border);
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+}

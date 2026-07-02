@@ -1,0 +1,18 @@
+{
+  "name": "SDN — Saturday Night",
+  "short_name": "SDN",
+  "description": "Saturday Night 축구 클럽 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16234d",
+  "theme_color": "#16234d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
