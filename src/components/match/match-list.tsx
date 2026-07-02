@@ -11,6 +11,14 @@ function past(m: MatchRow) {
   return m.score_for !== null || m.match_date < today;
 }
 
+// 승/무/패 배지
+function outcome(f: number | null, a: number | null) {
+  if (f == null || a == null) return null;
+  if (f > a) return { label: "승", color: "var(--color-win)" };
+  if (f < a) return { label: "패", color: "var(--color-lose)" };
+  return { label: "무", color: "var(--color-draw)" };
+}
+
 type Status = "all" | "upcoming" | "done" | "self";
 
 export function MatchList({ matches }: { matches: MatchRow[] }) {
@@ -110,6 +118,7 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
             const d = formatDateKo(m.match_date);
             const isPastM = past(m);
             const done = isPastM && m.score_for !== null;
+            const oc = done && m.type !== "self" ? outcome(m.score_for, m.score_against) : null;
             return (
               <Link key={m.id} href={`/matches/${m.id}`} className="flex items-stretch gap-2.5">
                 <div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-divider bg-card py-1">
@@ -128,7 +137,10 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
                     </div>
                   </div>
                   {done ? (
-                    <span className="text-sm font-medium">{m.score_for}:{m.score_against}</span>
+                    <div className="flex items-center gap-1.5">
+                      {oc && <span className="rounded-[8px] px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: oc.color }}>{oc.label}</span>}
+                      <span className="text-sm font-medium tabular-nums">{m.score_for}:{m.score_against}</span>
+                    </div>
                   ) : (
                     <span className="rounded-[10px] bg-red px-2 py-0.5 text-[11px] font-medium text-white">{dday(m.match_date)}</span>
                   )}
