@@ -47,6 +47,24 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
     self: matches.filter((m) => m.type === "self").length,
   };
 
+  // 월별 그룹 (filtered가 날짜 내림차순 → 그룹도 내림차순 유지)
+  const groups = useMemo(() => {
+    const curYear = new Date().getFullYear();
+    const out: { key: string; label: string; items: MatchRow[] }[] = [];
+    for (const m of filtered) {
+      const key = m.match_date.slice(0, 7);
+      let g = out.find((x) => x.key === key);
+      if (!g) {
+        const [y, mo] = key.split("-");
+        const label = Number(y) === curYear ? `${Number(mo)}월` : `${y}년 ${Number(mo)}월`;
+        g = { key, label, items: [] };
+        out.push(g);
+      }
+      g.items.push(m);
+    }
+    return out;
+  }, [filtered]);
+
   return (
     <div className="space-y-3">
       {/* 월별 */}
@@ -78,8 +96,17 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-divider bg-card soft-card px-4 py-10 text-center text-sm text-muted">해당 조건의 경기가 없어요.</div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((m) => {
+        <div className="space-y-4">
+          {groups.map((g) => (
+            <div key={g.key}>
+              {/* 월 구분 헤더 */}
+              <div className="mb-2 flex items-center gap-2 px-0.5">
+                <span className="text-[13.5px] font-bold text-fg">{g.label}</span>
+                <span className="text-[11px] text-subtle">{g.items.length}경기</span>
+                <span className="h-px flex-1 bg-line" />
+              </div>
+              <div className="space-y-2">
+          {g.items.map((m) => {
             const d = formatDateKo(m.match_date);
             const isPastM = past(m);
             const done = isPastM && m.score_for !== null;
@@ -109,6 +136,9 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
               </Link>
             );
           })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
