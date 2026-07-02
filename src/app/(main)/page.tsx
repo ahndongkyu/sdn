@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play } from "lucide-react";
+import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
 import { getMatches, getMatchAttendances, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
@@ -143,13 +143,16 @@ export default async function HomePage() {
             <span className="flex h-[46px] items-center text-[32px] font-extrabold leading-none tracking-[1px] text-fg tabular-nums">{last.score_for ?? "-"} : {last.score_against ?? "-"}</span>
             <Crest label={last.opponent} badge={last.opponent.slice(0, 2)} opp small />
           </div>
-          {last.youtube_url ? (
-            <a href={last.youtube_url} target="_blank" rel="noreferrer" className="flex w-full items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13.5px] font-bold text-accent">
-              <Play size={16} fill="currentColor" /> 매치 영상 보기
-            </a>
-          ) : (
-            <Link href={`/matches/${last.id}`} className="flex w-full items-center justify-center rounded-[14px] bg-tint py-3 text-[13.5px] font-bold text-accent">경기 상세 보기</Link>
-          )}
+          <div className="flex gap-2">
+            {last.youtube_url && (
+              <a href={last.youtube_url} target="_blank" rel="noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
+                <Play size={15} fill="currentColor" /> 경기 영상
+              </a>
+            )}
+            <Link href={`/matches/${last.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
+              <ClipboardList size={15} /> 경기 기록
+            </Link>
+          </div>
         </section>
       )}
     </div>
