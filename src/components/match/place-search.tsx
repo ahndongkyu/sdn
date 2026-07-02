@@ -6,7 +6,7 @@ import { MapPin, Check, Search } from "lucide-react";
 // 다음(카카오) 우편번호 서비스 — 무료·키 불필요
 const DAUM_SRC = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
 
-type DaumData = { roadAddress?: string; jibunAddress?: string; address?: string; buildingName?: string };
+type DaumData = { roadAddress?: string; jibunAddress?: string; address?: string; buildingName?: string; sido?: string; sigungu?: string; bname?: string };
 type DaumNS = { Postcode: new (opts: { oncomplete: (d: DaumData) => void }) => { open: () => void } };
 function getDaum(): DaumNS | undefined {
   return (window as unknown as { daum?: DaumNS }).daum;
@@ -52,8 +52,10 @@ export function PlaceSearch({
           if (!place && data.buildingName) setPlace(data.buildingName);
           setGeo("loading");
           setCoords(null);
+          // 좌표는 시/구 단위로 조회 (도로명 번지는 무료 지도에 없는 경우가 많음) — 날씨엔 충분
+          const region = [data.sido, data.sigungu].filter(Boolean).join(" ") || addr;
           try {
-            const res = await fetch(`/api/geocode?q=${encodeURIComponent(addr)}`);
+            const res = await fetch(`/api/geocode?q=${encodeURIComponent(region)}`);
             const d = await res.json();
             if (d.lat != null && d.lng != null) {
               setCoords({ lat: d.lat, lng: d.lng });
