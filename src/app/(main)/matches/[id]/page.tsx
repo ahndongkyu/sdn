@@ -192,7 +192,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             {going.map((a, i) => {
               const m = a.members;
               const badge = m ? POSITION_BADGE[m.position1] : POSITION_BADGE.MF;
-              const num = m?.member_numbers?.[0]?.number;
+              const num = m?.member_numbers?.find((n) => n.uniform === match.uniform)?.number ?? m?.member_numbers?.[0]?.number;
               return (
                 <div key={i} className="flex items-center gap-2 rounded-[10px] border border-divider bg-card px-2.5 py-2">
                   {num != null ? (
