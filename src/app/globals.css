@@ -60,6 +60,11 @@
   /* 토스트: 라이트=어두운 배경+흰 글씨 */
   --toast-bg: #131a2b;
   --toast-fg: #ffffff;
+
+  /* 참석 투표 색 (라이트) */
+  --vote-going: #1d9e75;
+  --vote-draw: #888780;
+  --vote-lose: #dc2f3c;
 }
 
 /* ===== 다크 (TURN 5) — next-themes .dark ===== */
@@ -121,6 +126,11 @@
   /* 토스트: 다크=밝은 배경+어두운 글씨 (반전 → 대비 확보) */
   --toast-bg: #eef2f8;
   --toast-fg: #131a2b;
+
+  /* 참석 투표 색 (다크 — 틸그린/슬레이트/소프트로즈, 남색 팔레트와 조화) */
+  --vote-going: #2f9e8b;
+  --vote-draw: #2a3450;
+  --vote-lose: #d95d63;
 }
 
 /* ===== Tailwind 토큰 매핑 (유틸 클래스가 위 변수 참조 → 다크 자동 전환) ===== */

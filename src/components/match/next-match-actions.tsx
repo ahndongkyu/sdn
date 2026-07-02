@@ -9,9 +9,9 @@ import { toast } from "@/lib/toast";
 type Status = "going" | "notGoing" | "undecided";
 
 const OPTS: { v: Status; label: string; bg: string }[] = [
-  { v: "going", label: "참석", bg: "#1d9e75" },
-  { v: "undecided", label: "미정", bg: "#888780" },
-  { v: "notGoing", label: "불참", bg: "#dc2f3c" },
+  { v: "going", label: "참석", bg: "var(--vote-going)" },
+  { v: "undecided", label: "미정", bg: "var(--vote-draw)" },
+  { v: "notGoing", label: "불참", bg: "var(--vote-lose)" },
 ];
 
 export function NextMatchActions({
@@ -83,7 +83,7 @@ export function NextMatchActions({
         </Link>
       ) : (
         <div className="flex flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-sunken py-2.5 text-[13px] font-medium text-subtle">
-          <Lock size={14} /> 미등록
+          <Lock size={14} /> 라인업 준비중
         </div>
       )}
     </div>

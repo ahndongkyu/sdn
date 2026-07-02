@@ -7,9 +7,9 @@ import { toast } from "@/lib/toast";
 type Status = "going" | "notGoing" | "undecided";
 
 const OPTS: { v: Status; label: string; activeBg: string }[] = [
-  { v: "going", label: "참석", activeBg: "#1d9e75" },
-  { v: "undecided", label: "미정", activeBg: "#888780" },
-  { v: "notGoing", label: "불참", activeBg: "#dc2f3c" },
+  { v: "going", label: "참석", activeBg: "var(--vote-going)" },
+  { v: "undecided", label: "미정", activeBg: "var(--vote-draw)" },
+  { v: "notGoing", label: "불참", activeBg: "var(--vote-lose)" },
 ];
 
 export function RsvpButtons({ matchId, current }: { matchId: string; current: Status }) {
