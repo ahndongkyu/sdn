@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { createMatch } from "@/lib/actions/matches";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
 const UNIFORMS = ["빨검", "흰파", "연핑크", "진남색"];
 
@@ -58,7 +59,7 @@ export default function NewMatchPage() {
           <input name="youtube_url" type="url" placeholder="https://youtu.be/..." className="input" />
         </Field>
 
-        <button className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">경기 등록</button>
+        <ConfirmSubmit message="이 경기를 등록하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">경기 등록</ConfirmSubmit>
       </form>
     </div>
   );

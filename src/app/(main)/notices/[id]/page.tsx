@@ -5,6 +5,7 @@ import { getNotice } from "@/lib/data/notices";
 import { isManager } from "@/lib/data/auth";
 import { deleteNotice } from "@/lib/actions/notices";
 import { formatDateKo } from "@/lib/format";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
 export default async function NoticeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,9 +22,9 @@ export default async function NoticeDetailPage({ params }: { params: Promise<{ i
         {manager && (
           <form action={deleteNotice}>
             <input type="hidden" name="id" value={id} />
-            <button className="flex items-center gap-1 rounded-lg border border-danger/40 px-2.5 py-1.5 text-xs text-danger">
+            <ConfirmSubmit message="이 공지를 삭제하시겠습니까?" className="flex items-center gap-1 rounded-lg border border-danger/40 px-2.5 py-1.5 text-xs text-danger">
               <Trash2 size={13} /> 삭제
-            </button>
+            </ConfirmSubmit>
           </form>
         )}
       </div>

@@ -26,7 +26,7 @@ export function GuestManager({ matchId, guests }: { matchId: string; guests: Gue
               <div key={g.id} className="flex items-center gap-2.5 rounded-[10px] border border-divider bg-card px-2.5 py-2">
                 <span className="rounded-[10px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{g.position1}</span>
                 <span className="flex-1 text-[13px]">{g.name} <span className="text-[10px] text-faint">용병</span></span>
-                <button onClick={() => start(async () => { await deleteGuest(matchId, g.id); toast("용병이 삭제됐어요"); })} aria-label="삭제">
+                <button onClick={() => { if (!window.confirm(`${g.name} 용병을 삭제하시겠습니까?`)) return; start(async () => { await deleteGuest(matchId, g.id); toast("용병이 삭제됐어요"); }); }} aria-label="삭제">
                   <Trash2 size={15} className="text-faint" />
                 </button>
               </div>

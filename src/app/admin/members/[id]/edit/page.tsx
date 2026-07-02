@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { X, Trash2 } from "lucide-react";
 import { getMemberById } from "@/lib/data/members";
 import { updateMember, deleteMember } from "@/lib/actions/members";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
 const POSITIONS = [
   { v: "FW", label: "FW 공격수" },
@@ -76,9 +77,9 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
 
       <form action={deleteMember} className="mt-6 border-t border-divider pt-5">
         <input type="hidden" name="id" value={id} />
-        <button className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
+        <ConfirmSubmit message="이 회원을 삭제하시겠습니까? 되돌릴 수 없어요." className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
           <Trash2 size={15} /> 이 회원 삭제
-        </button>
+        </ConfirmSubmit>
       </form>
     </div>
   );

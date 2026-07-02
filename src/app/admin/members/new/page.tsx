@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { createMember } from "@/lib/actions/members";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
 const POSITIONS = [
   { v: "FW", label: "FW 공격수" },
@@ -48,9 +49,9 @@ export default function NewMemberPage() {
           <Select name="role" options={[{ v: "member", label: "회원" }, { v: "manager", label: "운영진" }]} />
         </Field>
 
-        <button className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">
+        <ConfirmSubmit message="이 회원을 등록하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">
           회원 등록
-        </button>
+        </ConfirmSubmit>
         <p className="text-center text-[11px] leading-relaxed text-subtle">
           등록 후 회원이 카카오 로그인하면
           <br />

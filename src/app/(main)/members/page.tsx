@@ -9,11 +9,14 @@ export default async function MembersPage() {
   const role = (profile?.members as { role?: string } | null)?.role;
   const isManager = role === "manager" || role === "admin";
 
+  // 관리자 계정은 실제 선수 로스터가 아니므로 목록에서 제외
+  const roster = members.filter((m) => m.role !== "admin");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-medium">
-          멤버 <span className="text-[13px] text-subtle">{members.length}명</span>
+          멤버 <span className="text-[13px] text-subtle">{roster.length}명</span>
         </h1>
         {isManager && (
           <Link href="/admin/members/new" className="flex items-center gap-1 rounded-lg bg-red px-3 py-1.5 text-xs text-white">
@@ -22,12 +25,12 @@ export default async function MembersPage() {
         )}
       </div>
 
-      {members.length === 0 ? (
+      {roster.length === 0 ? (
         <div className="rounded-xl border border-divider bg-card soft-card px-4 py-10 text-center text-sm text-muted">
           아직 등록된 회원이 없어요.
         </div>
       ) : (
-        <MemberList members={members} />
+        <MemberList members={roster} />
       )}
     </div>
   );

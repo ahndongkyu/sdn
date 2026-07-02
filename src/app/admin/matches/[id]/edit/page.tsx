@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { X, Trash2 } from "lucide-react";
 import { getMatch } from "@/lib/data/matches";
 import { updateMatch, deleteMatch } from "@/lib/actions/matches";
+import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
 const UNIFORMS = ["빨검", "흰파", "연핑크", "진남색"];
 
@@ -72,9 +73,9 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
       {/* 삭제 */}
       <form action={deleteMatch} className="mt-6 border-t border-divider pt-5">
         <input type="hidden" name="id" value={id} />
-        <button className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
+        <ConfirmSubmit message="이 경기를 삭제하시겠습니까? 되돌릴 수 없어요." className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
           <Trash2 size={15} /> 이 경기 삭제
-        </button>
+        </ConfirmSubmit>
       </form>
     </div>
   );
