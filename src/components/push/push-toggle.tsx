@@ -20,10 +20,17 @@ export function PushToggle() {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [iosNeedsInstall, setIosNeedsInstall] = useState(false);
 
   useEffect(() => {
     const ok = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
     setSupported(ok);
+    // 아이폰은 홈 화면에 추가(PWA 설치)해서 앱으로 열어야만 푸시가 됨 (Safari 탭에선 미지원)
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    setIosNeedsInstall(isIOS && !standalone);
     if (ok) {
       navigator.serviceWorker.getRegistration().then((reg) => reg?.pushManager.getSubscription()).then((s) => setEnabled(!!s)).catch(() => {});
     }
@@ -77,7 +84,13 @@ export function PushToggle() {
       <div className="flex-1">
         <div className="text-sm">푸시 알림</div>
         <div className="text-[11px] text-subtle">
-          {supported === false ? "이 기기는 지원 안 함" : enabled ? "새 공지·경기 알림 받는 중" : "공지·경기 알림 받기"}
+          {iosNeedsInstall
+            ? "아이폰은 '홈 화면에 추가' 후 앱에서 켜주세요"
+            : supported === false
+              ? "이 기기는 지원 안 함"
+              : enabled
+                ? "새 공지·경기 알림 받는 중"
+                : "공지·경기 알림 받기"}
         </div>
       </div>
       <button
@@ -86,7 +99,7 @@ export function PushToggle() {
         onClick={enabled ? disable : enable}
         disabled={busy || supported === null || supported === false}
         className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40"
-        style={{ background: enabled ? "#dc2f3c" : "color-mix(in srgb, black 18%, transparent)" }}
+        style={{ background: enabled ? "var(--sdn-blue)" : "var(--sdn-faint)" }}
       >
         <span
           className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all"
