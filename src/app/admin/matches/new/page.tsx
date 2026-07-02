@@ -2,6 +2,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { createMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
+import { PlaceSearch } from "@/components/match/place-search";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
@@ -42,12 +43,8 @@ export default function NewMatchPage() {
           </Field>
         </div>
 
-        <Field label="장소">
-          <input name="place" placeholder="잠실 보조경기장" className="input" />
-        </Field>
-
-        <Field label="장소 주소 (선택 · 홈에서 탭하면 복사)">
-          <input name="place_address" placeholder="서울 송파구 올림픽로 25" className="input" />
+        <Field label="장소 (검색 · 선택 시 주소·좌표 자동)">
+          <PlaceSearch />
         </Field>
 
         <Field label="유니폼 (포메이션 등번호에 적용)">

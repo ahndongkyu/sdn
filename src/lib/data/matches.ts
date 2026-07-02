@@ -8,6 +8,8 @@ export type MatchRow = {
   match_time: string | null;
   place: string | null;
   place_address: string | null;
+  place_lat: number | null;
+  place_lng: number | null;
   type: "match" | "self";
   uniform: string | null;
   score_for: number | null;
@@ -38,7 +40,7 @@ export async function getMatches(): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id")
+    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id")
     .order("match_date", { ascending: false });
   if (error) {
     console.error("getMatches", error);
@@ -51,7 +53,7 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id, mom_vote_close")
+    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id, mom_vote_close")
     .eq("id", id)
     .maybeSingle();
   return (data as MatchRow) ?? null;

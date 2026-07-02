@@ -4,6 +4,7 @@ import { X, Trash2 } from "lucide-react";
 import { getMatch } from "@/lib/data/matches";
 import { updateMatch, deleteMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
+import { PlaceSearch } from "@/components/match/place-search";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
@@ -50,12 +51,8 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           </Field>
         </div>
 
-        <Field label="장소">
-          <input name="place" defaultValue={match.place ?? ""} placeholder="잠실 보조경기장" className="input" />
-        </Field>
-
-        <Field label="장소 주소 (선택 · 홈에서 탭하면 복사)">
-          <input name="place_address" defaultValue={match.place_address ?? ""} placeholder="서울 송파구 올림픽로 25" className="input" />
+        <Field label="장소 (검색 · 선택 시 주소·좌표 자동)">
+          <PlaceSearch defaultPlace={match.place ?? ""} defaultAddress={match.place_address ?? ""} defaultLat={match.place_lat} defaultLng={match.place_lng} />
         </Field>
 
         <Field label="유니폼">

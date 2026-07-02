@@ -117,7 +117,7 @@ export default async function HomePage() {
       {/* 경기 날씨 (외부 API — 스트리밍) */}
       {next && (
         <Suspense fallback={<WeatherSkeleton date={next.match_date} time={next.match_time} />}>
-          <WeatherCard date={next.match_date} time={next.match_time} />
+          <WeatherCard date={next.match_date} time={next.match_time} lat={next.place_lat} lng={next.place_lng} />
         </Suspense>
       )}
 
@@ -191,8 +191,8 @@ function WeatherShell({ date, time, children }: { date: string; time: string | n
   );
 }
 
-async function WeatherCard({ date, time }: { date: string; time: string | null }) {
-  const weather = await getMatchWeather(date, time);
+async function WeatherCard({ date, time, lat, lng }: { date: string; time: string | null; lat: number | null; lng: number | null }) {
+  const weather = await getMatchWeather(date, time, lat ?? undefined, lng ?? undefined);
   return (
     <WeatherShell date={date} time={time}>
       {weather ? (
