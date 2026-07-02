@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, UserPlus, RotateCcw, Check, Share2 } from "lucide-react";
+import { Save, Plus, UserPlus, RotateCcw, Check, Share2, ChevronDown } from "lucide-react";
 import { toPng } from "html-to-image";
 import { POSITION_COLOR, type Position } from "@/lib/mock";
 import { saveFormation } from "@/lib/actions/formations";
@@ -78,6 +78,7 @@ export function MatchFormation({
   const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
   const [captureQs, setCaptureQs] = useState<number[] | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
   const [, startAdd] = useTransition();
@@ -225,14 +226,6 @@ export function MatchFormation({
         </div>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto">
-        {Object.keys(PRESETS).map((name) => (
-          <button key={name} onClick={() => applyPreset(name)} className={`shrink-0 rounded-[20px] px-3 py-1.5 text-xs ${preset === name ? "bg-[#1b5e20] text-white" : "border border-line bg-card text-muted"}`}>
-            {name}
-          </button>
-        ))}
-      </div>
-
       <div className="text-center text-[11px] text-subtle">
         {selected !== null ? `${slots[selected].label} 자리 · 아래에서 선수를 탭하세요` : "빈 자리를 탭하고 선수를 넣으세요 · 채운 자리 탭 = 비우기"}
       </div>
@@ -331,19 +324,37 @@ export function MatchFormation({
         </div>
       )}
 
-      {/* 하단 액션 */}
-      <div className="flex gap-2">
+      {/* 하단 액션 — 포메이션(드롭다운) · 초기화 · 공유 · 저장 */}
+      <div className="relative flex gap-1.5">
         {isManager && (
-          <button onClick={resetQuarter} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-line bg-card py-2.5 text-[13px] text-muted">
-            <RotateCcw size={14} /> 초기화
-          </button>
+          <>
+            <button onClick={() => setPresetOpen((v) => !v)} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-line bg-card py-2.5 text-[12px] font-bold text-fg">
+              {preset} <ChevronDown size={13} className="text-subtle" />
+            </button>
+            {presetOpen && (
+              <div className="absolute bottom-[calc(100%+6px)] left-0 z-10 w-40 overflow-hidden rounded-xl border border-line bg-card soft-card">
+                {Object.keys(PRESETS).map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => { applyPreset(name); setPresetOpen(false); }}
+                    className={`flex w-full items-center justify-between px-3.5 py-2.5 text-[13px] ${preset === name ? "bg-tint font-bold text-accent" : "text-fg"}`}
+                  >
+                    {name} {preset === name && <Check size={13} />}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={resetQuarter} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-line bg-card py-2.5 text-[12px] text-muted">
+              <RotateCcw size={13} /> 초기화
+            </button>
+          </>
         )}
-        <button onClick={() => setShareOpen((v) => !v)} disabled={captureQs != null} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-navy py-2.5 text-[13px] font-medium text-white disabled:opacity-60">
-          <Share2 size={14} /> {captureQs != null ? "생성 중…" : "공유"}
+        <button onClick={() => setShareOpen((v) => !v)} disabled={captureQs != null} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-navy py-2.5 text-[12px] font-medium text-white disabled:opacity-60">
+          <Share2 size={13} /> {captureQs != null ? "생성 중…" : "공유"}
         </button>
         {isManager && (
-          <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red py-2.5 text-[13px] font-medium text-white disabled:opacity-50">
-            <Save size={14} /> {saved ? "수정 저장" : "저장"}
+          <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red py-2.5 text-[12px] font-medium text-white disabled:opacity-50">
+            <Save size={13} /> {saved ? "수정 저장" : "저장"}
           </button>
         )}
       </div>
