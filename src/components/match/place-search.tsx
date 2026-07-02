@@ -52,8 +52,9 @@ export function PlaceSearch({
           if (!place && data.buildingName) setPlace(data.buildingName);
           setGeo("loading");
           setCoords(null);
-          // 좌표는 시/구 단위로 조회 (도로명 번지는 무료 지도에 없는 경우가 많음) — 날씨엔 충분
-          const region = [data.sido, data.sigungu].filter(Boolean).join(" ") || addr;
+          // 좌표는 행정구역(시/구/동)만으로 조회 — 도로명·번지는 무료 지도에 없는 경우가 많음.
+          // 동까지 넣고, 안 잡히면 서버가 구→시로 자동 축소. 날씨엔 충분.
+          const region = [data.sido, data.sigungu, data.bname].filter(Boolean).join(" ") || addr;
           try {
             const res = await fetch(`/api/geocode?q=${encodeURIComponent(region)}`);
             const d = await res.json();
