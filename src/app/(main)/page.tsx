@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
+import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList, Shirt, Lock } from "lucide-react";
 import { getMatches, getMatchAttendances, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
+import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
@@ -19,12 +20,14 @@ export default async function HomePage() {
   const next = upcoming[0] ?? null;
   const last = matches.filter(isPast)[0] ?? null;
 
-  const [weather, myStatus, nextAtt] = await Promise.all([
+  const [weather, myStatus, nextAtt, nextFormation] = await Promise.all([
     next ? getMatchWeather(next.match_date, next.match_time) : Promise.resolve(null),
     next && myMemberId ? getMyAttendance(next.id, myMemberId) : Promise.resolve("undecided" as const),
     next ? getMatchAttendances(next.id) : Promise.resolve([]),
+    next ? getFormation(next.id) : Promise.resolve(null),
   ]);
   const goingCount = nextAtt.filter((a) => a.status === "going").length;
+  const hasLineup = !!nextFormation;
   const diff = team.gf - team.ga;
 
   return (
@@ -90,6 +93,20 @@ export default async function HomePage() {
           <RsvpButtons matchId={next.id} current={myStatus} />
           <div className="mt-2.5 text-center text-[11px] text-subtle">
             현재 <span className="font-bold text-accent">{goingCount}명</span> 참석
+          </div>
+          <div className="mt-3 border-t border-line pt-3">
+            {hasLineup ? (
+              <Link
+                href={`/matches/${next.id}/formation`}
+                className="flex w-full items-center justify-center gap-1.5 rounded-[12px] bg-tint py-2.5 text-[13px] font-bold text-accent"
+              >
+                <Shirt size={15} /> 라인업 보기
+              </Link>
+            ) : (
+              <div className="flex w-full items-center justify-center gap-1.5 rounded-[12px] bg-sunken py-2.5 text-[13px] font-medium text-subtle">
+                <Lock size={14} /> 라인업 미등록
+              </div>
+            )}
           </div>
         </section>
       ) : (

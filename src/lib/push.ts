@@ -33,6 +33,36 @@ export async function sendToSubscriptions(
   );
 }
 
+// 특정 회원들에게 푸시 발송 (운영진 세션 — RLS로 profiles/subscriptions 전체 조회)
+export async function sendPushToMembers(
+  memberIds: string[],
+  payload: { title: string; body: string; url?: string },
+) {
+  if (!ensure() || memberIds.length === 0) return;
+  const supabase = await createClient();
+  const { data: profs } = await supabase.from("profiles").select("id").in("member_id", memberIds);
+  const profileIds = (profs ?? []).map((p) => p.id as string);
+  if (profileIds.length === 0) return;
+  const { data: subs } = await supabase
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .in("profile_id", profileIds);
+  const json = JSON.stringify(payload);
+  await Promise.all(
+    (subs ?? []).map(async (s) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: s.endpoint as string, keys: { p256dh: s.p256dh as string, auth: s.auth as string } },
+          json,
+        );
+      } catch (e) {
+        const code = (e as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) await supabase.from("push_subscriptions").delete().eq("id", s.id);
+      }
+    }),
+  );
+}
+
 // 전체 구독자에게 푸시 발송 (운영진 세션에서 호출 — RLS로 전체 조회 허용)
 export async function sendPushToAll(payload: { title: string; body: string; url?: string }) {
   if (!ensure()) return;

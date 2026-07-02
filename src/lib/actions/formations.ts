@@ -3,13 +3,34 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/data/auth";
+import { sendPushToMembers } from "@/lib/push";
 import type { FormationLayout } from "@/lib/data/formations";
 
 // 포메이션 저장 (운영진) — 매치당 1행으로 교체 저장
 export async function saveFormation(matchId: string, layout: FormationLayout) {
   if (!(await isManager())) return;
   const supabase = await createClient();
+
+  // 최초 등록 여부 (재저장/수정 시엔 푸시 안 보냄 — 스팸 방지)
+  const { data: existing } = await supabase.from("formations").select("id").eq("match_id", matchId).limit(1);
+  const isFirst = !existing || existing.length === 0;
+
   await supabase.from("formations").delete().eq("match_id", matchId);
   await supabase.from("formations").insert({ match_id: matchId, name: "custom", layout });
   revalidatePath(`/matches/${matchId}/formation`);
+  revalidatePath("/");
+
+  if (isFirst) {
+    const { data: att } = await supabase
+      .from("attendances")
+      .select("member_id")
+      .eq("match_id", matchId)
+      .eq("status", "going");
+    const memberIds = (att ?? []).map((a) => a.member_id as string).filter(Boolean);
+    await sendPushToMembers(memberIds, {
+      title: "SDN · 라인업 등록",
+      body: "이번 경기 포메이션이 등록됐어요. 라인업을 확인하세요!",
+      url: `/matches/${matchId}/formation`,
+    });
+  }
 }
