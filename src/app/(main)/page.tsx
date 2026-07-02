@@ -6,7 +6,7 @@ import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
-import { formatDateKo, dday } from "@/lib/format";
+import { formatDateKo, dday, regionLabel } from "@/lib/format";
 import { NextMatchActions } from "@/components/match/next-match-actions";
 import { VideoButton } from "@/components/match/video-button";
 import { PlaceCopy } from "@/components/match/place-copy";
@@ -116,8 +116,8 @@ export default async function HomePage() {
 
       {/* 경기 날씨 (외부 API — 스트리밍) */}
       {next && (
-        <Suspense fallback={<WeatherSkeleton date={next.match_date} time={next.match_time} />}>
-          <WeatherCard date={next.match_date} time={next.match_time} lat={next.place_lat} lng={next.place_lng} />
+        <Suspense fallback={<WeatherSkeleton region={regionLabel(next.place_address)} />}>
+          <WeatherCard date={next.match_date} time={next.match_time} lat={next.place_lat} lng={next.place_lng} region={regionLabel(next.place_address)} />
         </Suspense>
       )}
 
@@ -179,22 +179,22 @@ function Crest({ label, badge, opp, small }: { label: string; badge: string; opp
     </div>
   );
 }
-function WeatherShell({ date, time, children }: { date: string; time: string | null; children: React.ReactNode }) {
+function WeatherShell({ date, time, region, children }: { date?: string; time?: string | null; region: string | null; children: React.ReactNode }) {
   return (
     <section className="rounded-[20px] border border-line bg-card p-3.5 soft-card">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] text-muted"><Cloud size={15} className="mr-1 inline align-[-2px]" /> 경기 날씨</span>
-        <span className="text-[11px] text-subtle">{formatDateKo(date).short} {time ?? ""}</span>
+        <span className="text-[13px] text-muted"><Cloud size={15} className="mr-1 inline align-[-2px]" /> {region ?? "경기 날씨"}</span>
+        {date && <span className="text-[11px] text-subtle">{formatDateKo(date).short} {time ?? ""}</span>}
       </div>
       {children}
     </section>
   );
 }
 
-async function WeatherCard({ date, time, lat, lng }: { date: string; time: string | null; lat: number | null; lng: number | null }) {
+async function WeatherCard({ date, time, lat, lng, region }: { date: string; time: string | null; lat: number | null; lng: number | null; region: string | null }) {
   const weather = await getMatchWeather(date, time, lat ?? undefined, lng ?? undefined);
   return (
-    <WeatherShell date={date} time={time}>
+    <WeatherShell date={date} time={time} region={region}>
       {weather ? (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -216,9 +216,9 @@ async function WeatherCard({ date, time, lat, lng }: { date: string; time: strin
   );
 }
 
-function WeatherSkeleton({ date, time }: { date: string; time: string | null }) {
+function WeatherSkeleton({ region }: { region: string | null }) {
   return (
-    <WeatherShell date={date} time={time}>
+    <WeatherShell region={region}>
       <div className="flex animate-pulse items-center gap-3">
         <div className="h-9 w-9 rounded-full bg-sunken" />
         <div className="h-7 w-16 rounded bg-sunken" />
