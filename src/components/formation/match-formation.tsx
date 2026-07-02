@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, UserPlus } from "lucide-react";
+import { Save, Plus, UserPlus, RotateCcw, Check } from "lucide-react";
 import { POSITION_COLOR, type Position } from "@/lib/mock";
 import { saveFormation } from "@/lib/actions/formations";
 import { setAttendanceFor } from "@/lib/actions/matches";
@@ -74,6 +74,7 @@ export function MatchFormation({
   const [quarter, setQuarter] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
   const [, startAdd] = useTransition();
   const [presetByQ, setPresetByQ] = useState<Record<number, string>>(() => {
@@ -151,7 +152,17 @@ export function MatchFormation({
     }
     await saveFormation(matchId, layout);
     setSaving(false);
+    setSaved(true);
     toast("포메이션이 저장됐어요");
+  }
+
+  // 현재 쿼터 라인업만 비우기 (저장해야 실제 반영)
+  function resetQuarter() {
+    if (Object.keys(assign).length === 0) return;
+    if (!window.confirm(`${quarter}쿼터 라인업을 초기화할까요?`)) return;
+    setAssignByQ((s) => ({ ...s, [quarter]: {} }));
+    setSelected(null);
+    toast(`${quarter}쿼터 라인업을 비웠어요 · 저장하면 반영돼요`);
   }
 
   return (
@@ -164,11 +175,23 @@ export function MatchFormation({
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-[13px] text-muted">vs {opponent} · {preset} · {filled}/11</div>
-        <button onClick={save} disabled={saving} className="flex items-center gap-1 rounded-lg bg-red px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
-          <Save size={14} /> 저장
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          {saved && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e1f5ee] px-2 py-0.5 text-[10px] font-bold text-[#0f6e56]">
+              <Check size={11} /> 등록됨
+            </span>
+          )}
+          <span className="truncate text-[13px] text-muted">vs {opponent} · {preset} · {filled}/11</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button onClick={resetQuarter} className="flex items-center gap-1 rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs text-muted">
+            <RotateCcw size={13} /> 초기화
+          </button>
+          <button onClick={save} disabled={saving} className="flex items-center gap-1 rounded-lg bg-red px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
+            <Save size={14} /> {saved ? "수정 저장" : "저장"}
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto">
