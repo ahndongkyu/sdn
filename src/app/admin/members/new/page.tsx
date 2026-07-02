@@ -28,7 +28,7 @@ export default function NewMemberPage() {
         <Field label="유니폼별 등번호">
           <div className="flex flex-col gap-2">
             <NumberRow uniform="빨검" color="#dc2f3c" />
-            <NumberRow uniform="흰파" color="#3a7bd5" border />
+            <NumberRow uniform="파랑" color="#1e4fd6" />
           </div>
         </Field>
 

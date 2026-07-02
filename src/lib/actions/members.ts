@@ -35,9 +35,9 @@ export async function createMember(formData: FormData) {
     return;
   }
 
-  // 유니폼별 등번호 (빨검 / 흰파)
+  // 유니폼별 등번호 (빨검 / 파랑)
   const numbers: { member_id: string; uniform: string; number: number }[] = [];
-  for (const uniform of ["빨검", "흰파"]) {
+  for (const uniform of ["빨검", "파랑"]) {
     const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
     if (raw) {
       const n = parseInt(raw, 10);
@@ -74,7 +74,7 @@ export async function updateMember(formData: FormData) {
   // 등번호 교체 (기존 삭제 후 재삽입)
   await supabase.from("member_numbers").delete().eq("member_id", id);
   const numbers: { member_id: string; uniform: string; number: number }[] = [];
-  for (const uniform of ["빨검", "흰파"]) {
+  for (const uniform of ["빨검", "파랑"]) {
     const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
     if (raw) {
       const n = parseInt(raw, 10);

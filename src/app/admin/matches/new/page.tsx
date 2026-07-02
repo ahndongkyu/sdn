@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { createMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 
-const UNIFORMS = ["빨검", "흰파", "연핑크", "진남색"];
+const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
 export default function NewMatchPage() {
   return (

@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 const FOOT_LABEL = { L: "왼발", R: "오른발", both: "양발" } as const;
 const UNIFORM_COLOR: Record<string, string> = {
   빨검: "#dc2f3c",
-  흰파: "#3a7bd5",
+  파랑: "#1e4fd6",
   연핑크: "#f6c9d8",
   진남색: "#16234d",
 };

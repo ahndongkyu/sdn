@@ -4,7 +4,7 @@ import { getMembers } from "@/lib/data/members";
 
 const UNIFORMS = [
   { name: "빨검", color: "#dc2f3c", border: false },
-  { name: "흰파", color: "#3a7bd5", border: true },
+  { name: "파랑", color: "#1e4fd6", border: false },
   { name: "연핑크", color: "#f6c9d8", border: false },
   { name: "진남색", color: "#16234d", border: false },
 ];
