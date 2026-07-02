@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, UserPlus, RotateCcw, Check } from "lucide-react";
+import { Save, Plus, UserPlus, RotateCcw, Check, Share2 } from "lucide-react";
+import { toPng } from "html-to-image";
 import { POSITION_COLOR, type Position } from "@/lib/mock";
 import { saveFormation } from "@/lib/actions/formations";
 import { setAttendanceFor } from "@/lib/actions/matches";
@@ -76,6 +77,9 @@ export function MatchFormation({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [captureQs, setCaptureQs] = useState<number[] | null>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
   const [, startAdd] = useTransition();
   const [presetByQ, setPresetByQ] = useState<Record<number, string>>(() => {
     const s: Record<number, string> = {};
@@ -165,6 +169,41 @@ export function MatchFormation({
     toast(`${quarter}쿼터 라인업을 비웠어요 · 저장하면 반영돼요`);
   }
 
+  function startShare(qs: number[]) {
+    setShareOpen(false);
+    setCaptureQs(qs);
+  }
+
+  // captureQs가 정해지면 숨은 캡처 노드를 이미지로 만들어 공유/저장
+  useEffect(() => {
+    if (!captureQs || !captureRef.current) return;
+    let cancelled = false;
+    (async () => {
+      await new Promise((r) => setTimeout(r, 80)); // DOM/paint 안정화
+      try {
+        const dataUrl = await toPng(captureRef.current!, { pixelRatio: 2, cacheBust: true, backgroundColor: "#0b1f14" });
+        if (cancelled) return;
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `SDN_라인업_vs_${opponent}.png`, { type: "image/png" });
+        const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+        if (nav.canShare && nav.canShare({ files: [file] })) {
+          await nav.share({ files: [file], title: "SDN 라인업", text: `SDN FC vs ${opponent} 라인업` });
+        } else {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = file.name;
+          a.click();
+          toast("라인업 이미지를 저장했어요");
+        }
+      } catch (e) {
+        if ((e as { name?: string })?.name !== "AbortError") toast("공유 이미지를 만들지 못했어요");
+      } finally {
+        if (!cancelled) setCaptureQs(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [captureQs, opponent]);
+
   return (
     <div className="space-y-3">
       <div className="flex gap-1.5">
@@ -183,14 +222,6 @@ export function MatchFormation({
             </span>
           )}
           <span className="truncate text-[13px] text-muted">vs {opponent} · {preset} · {filled}/11</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <button onClick={resetQuarter} className="flex items-center gap-1 rounded-lg border border-line bg-card px-2.5 py-1.5 text-xs text-muted">
-            <RotateCcw size={13} /> 초기화
-          </button>
-          <button onClick={save} disabled={saving} className="flex items-center gap-1 rounded-lg bg-red px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">
-            <Save size={14} /> {saved ? "수정 저장" : "저장"}
-          </button>
         </div>
       </div>
 
@@ -283,6 +314,73 @@ export function MatchFormation({
           </div>
         )}
       </div>
+
+      {/* 공유 범위 선택 */}
+      {shareOpen && (
+        <div className="rounded-xl border border-line bg-card soft-card p-3">
+          <div className="mb-2.5 text-center text-[13px] font-medium">무엇을 공유할까요?</div>
+          <div className="flex gap-2">
+            <button onClick={() => startShare([quarter])} className="flex-1 rounded-[10px] border border-line bg-card py-2.5 text-center text-[13px] font-medium">
+              이번 쿼터만<br /><span className="text-[11px] text-subtle">{quarter}쿼터</span>
+            </button>
+            <button onClick={() => startShare(QUARTERS)} className="flex-1 rounded-[10px] bg-navy py-2.5 text-center text-[13px] font-medium text-white">
+              전체 쿼터<br /><span className="text-[11px] text-white/70">1~4쿼터 한 장</span>
+            </button>
+          </div>
+          <button onClick={() => setShareOpen(false)} className="mt-2 w-full py-1 text-[12px] text-subtle">취소</button>
+        </div>
+      )}
+
+      {/* 하단 액션 */}
+      <div className="flex gap-2">
+        {isManager && (
+          <button onClick={resetQuarter} className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-line bg-card py-2.5 text-[13px] text-muted">
+            <RotateCcw size={14} /> 초기화
+          </button>
+        )}
+        <button onClick={() => setShareOpen((v) => !v)} disabled={captureQs != null} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-navy py-2.5 text-[13px] font-medium text-white disabled:opacity-60">
+          <Share2 size={14} /> {captureQs != null ? "생성 중…" : "공유"}
+        </button>
+        {isManager && (
+          <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red py-2.5 text-[13px] font-medium text-white disabled:opacity-50">
+            <Save size={14} /> {saved ? "수정 저장" : "저장"}
+          </button>
+        )}
+      </div>
+
+      {/* 숨은 캡처 노드 (공유 이미지 생성용) */}
+      {captureQs && (
+        <div style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none" }} aria-hidden>
+          <div ref={captureRef} style={{ width: 380, background: "#0b1f14", padding: "18px 16px 14px", fontFamily: "inherit" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(150deg,#2e6bff,#14213d)", color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>SDN</div>
+              <div style={{ color: "#fff", fontSize: 15, fontWeight: 700 }}>SDN FC <span style={{ color: "#9fb2d6", fontWeight: 400 }}>vs {opponent}</span></div>
+            </div>
+            {captureQs.map((q) => (
+              <div key={q} style={{ marginBottom: 14 }}>
+                <div style={{ color: "#cfe0c9", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{q}쿼터 · {presetByQ[q]}</div>
+                <div style={{ position: "relative", width: "100%", height: 220, borderRadius: 12, overflow: "hidden", background: "linear-gradient(160deg,#0f3d24,#0a2417)" }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: "50%", borderBottom: "1px solid rgba(255,255,255,.12)" }} />
+                  <div style={{ position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)", width: 60, height: 26, border: "1px solid rgba(255,255,255,.2)", borderTop: "none", borderRadius: "0 0 8px 8px" }} />
+                  {PRESETS[presetByQ[q]].map((slot, i) => {
+                    const pid = assignByQ[q][i];
+                    if (!pid) return null;
+                    const player = nameById.get(pid);
+                    if (!player) return null;
+                    return (
+                      <div key={i} style={{ position: "absolute", left: `${slot.x}%`, top: `${slot.y}%`, transform: "translate(-50%,-50%)", display: "flex", flexDirection: "column", alignItems: "center", width: 64 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid #fff", background: POSITION_COLOR[groupOf(slot.label)], color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{slot.label}</div>
+                        <div style={{ marginTop: 2, fontSize: 9, color: "#fff", textShadow: "0 1px 2px #000", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 64 }}>{player.name}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div style={{ textAlign: "center", color: "#5f7a68", fontSize: 10, marginTop: 2 }}>SDN FC · Saturday Night</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
