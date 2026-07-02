@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList, Shirt, Lock } from "lucide-react";
+import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
 import { getMatches, getMatchAttendances, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
 import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
 import { formatDateKo, dday } from "@/lib/format";
-import { RsvpButtons } from "@/components/match/rsvp-buttons";
+import { NextMatchActions } from "@/components/match/next-match-actions";
 import { BellButton } from "@/components/layout/bell-button";
 
 export default async function HomePage() {
@@ -90,23 +90,9 @@ export default async function HomePage() {
             {formatDateKo(next.match_date).full} {next.match_time ?? ""}
             {next.place && <div className="mt-1"><MapPin size={14} className="mr-1 inline align-[-2px] text-subtle" /> {next.place}</div>}
           </div>
-          <RsvpButtons matchId={next.id} current={myStatus} />
+          <NextMatchActions matchId={next.id} current={myStatus} hasLineup={hasLineup} />
           <div className="mt-2.5 text-center text-[11px] text-subtle">
             현재 <span className="font-bold text-accent">{goingCount}명</span> 참석
-          </div>
-          <div className="mt-3 border-t border-line pt-3">
-            {hasLineup ? (
-              <Link
-                href={`/matches/${next.id}/formation`}
-                className="flex w-full items-center justify-center gap-1.5 rounded-[12px] bg-tint py-2.5 text-[13px] font-bold text-accent"
-              >
-                <Shirt size={15} /> 라인업 보기
-              </Link>
-            ) : (
-              <div className="flex w-full items-center justify-center gap-1.5 rounded-[12px] bg-sunken py-2.5 text-[13px] font-medium text-subtle">
-                <Lock size={14} /> 라인업 미등록
-              </div>
-            )}
           </div>
         </section>
       ) : (
