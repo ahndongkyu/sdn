@@ -138,9 +138,9 @@ export default async function HomePage() {
             <span className="text-[12.5px] font-bold text-subtle">지난 경기</span>
             <LastBadge f={last.score_for} a={last.score_against} />
           </div>
-          <div className="mb-3 flex items-center justify-center gap-5">
+          <div className="mb-3 flex items-start justify-center gap-5">
             <Crest label="SDN" badge="SDN" small />
-            <span className="text-[32px] font-extrabold tracking-[1px] text-fg tabular-nums">{last.score_for ?? "-"} : {last.score_against ?? "-"}</span>
+            <span className="flex h-[46px] items-center text-[32px] font-extrabold leading-none tracking-[1px] text-fg tabular-nums">{last.score_for ?? "-"} : {last.score_against ?? "-"}</span>
             <Crest label={last.opponent} badge={last.opponent.slice(0, 2)} opp small />
           </div>
           {last.youtube_url ? (
