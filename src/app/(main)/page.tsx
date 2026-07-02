@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
 import { getMatches, getMatchAttendances, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
@@ -20,8 +21,8 @@ export default async function HomePage() {
   const next = upcoming[0] ?? null;
   const last = matches.filter(isPast)[0] ?? null;
 
-  const [weather, myStatus, nextAtt, nextFormation] = await Promise.all([
-    next ? getMatchWeather(next.match_date, next.match_time) : Promise.resolve(null),
+  // 날씨는 외부 API라 Suspense로 분리 스트리밍 (홈 렌더를 막지 않음)
+  const [myStatus, nextAtt, nextFormation] = await Promise.all([
     next && myMemberId ? getMyAttendance(next.id, myMemberId) : Promise.resolve("undecided" as const),
     next ? getMatchAttendances(next.id) : Promise.resolve([]),
     next ? getFormation(next.id) : Promise.resolve(null),
@@ -107,31 +108,11 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 경기 날씨 */}
+      {/* 경기 날씨 (외부 API — 스트리밍) */}
       {next && (
-        <section className="rounded-[20px] border border-line bg-card p-3.5 soft-card">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[13px] text-muted"><Cloud size={15} className="mr-1 inline align-[-2px]" /> 경기 날씨</span>
-            <span className="text-[11px] text-subtle">{formatDateKo(next.match_date).short} {next.match_time ?? ""}</span>
-          </div>
-          {weather ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {weather.hour >= 19 || weather.hour < 6 ? <MoonStar size={36} className="text-pos-gk" /> : <Sun size={36} className="text-pos-gk" />}
-                <div>
-                  <div className="text-[28px] font-bold leading-none text-fg">{weather.temp}°</div>
-                  <div className="mt-1 text-xs text-muted">체감 {weather.feels}°</div>
-                </div>
-              </div>
-              <div className="flex gap-4 text-center">
-                <WStat icon={<Droplet size={16} className="text-accent" />} v={`${weather.precip}%`} l="강수" />
-                <WStat icon={<Wind size={16} className="text-muted" />} v={`${weather.wind}㎧`} l="바람" />
-              </div>
-            </div>
-          ) : (
-            <div className="py-2 text-center text-[12px] text-subtle">경기일이 가까워지면 날씨가 표시돼요</div>
-          )}
-        </section>
+        <Suspense fallback={<WeatherSkeleton date={next.match_date} time={next.match_time} />}>
+          <WeatherCard date={next.match_date} time={next.match_time} />
+        </Suspense>
       )}
 
       {/* 지난 경기 */}
@@ -192,6 +173,54 @@ function Crest({ label, badge, opp, small }: { label: string; badge: string; opp
     </div>
   );
 }
+function WeatherShell({ date, time, children }: { date: string; time: string | null; children: React.ReactNode }) {
+  return (
+    <section className="rounded-[20px] border border-line bg-card p-3.5 soft-card">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-[13px] text-muted"><Cloud size={15} className="mr-1 inline align-[-2px]" /> 경기 날씨</span>
+        <span className="text-[11px] text-subtle">{formatDateKo(date).short} {time ?? ""}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+async function WeatherCard({ date, time }: { date: string; time: string | null }) {
+  const weather = await getMatchWeather(date, time);
+  return (
+    <WeatherShell date={date} time={time}>
+      {weather ? (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {weather.hour >= 19 || weather.hour < 6 ? <MoonStar size={36} className="text-pos-gk" /> : <Sun size={36} className="text-pos-gk" />}
+            <div>
+              <div className="text-[28px] font-bold leading-none text-fg">{weather.temp}°</div>
+              <div className="mt-1 text-xs text-muted">체감 {weather.feels}°</div>
+            </div>
+          </div>
+          <div className="flex gap-4 text-center">
+            <WStat icon={<Droplet size={16} className="text-accent" />} v={`${weather.precip}%`} l="강수" />
+            <WStat icon={<Wind size={16} className="text-muted" />} v={`${weather.wind}㎧`} l="바람" />
+          </div>
+        </div>
+      ) : (
+        <div className="py-2 text-center text-[12px] text-subtle">경기일이 가까워지면 날씨가 표시돼요</div>
+      )}
+    </WeatherShell>
+  );
+}
+
+function WeatherSkeleton({ date, time }: { date: string; time: string | null }) {
+  return (
+    <WeatherShell date={date} time={time}>
+      <div className="flex animate-pulse items-center gap-3">
+        <div className="h-9 w-9 rounded-full bg-sunken" />
+        <div className="h-7 w-16 rounded bg-sunken" />
+      </div>
+    </WeatherShell>
+  );
+}
+
 function WStat({ icon, v, l }: { icon: React.ReactNode; v: string; l: string }) {
   return (
     <div>
