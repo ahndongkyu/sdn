@@ -81,6 +81,12 @@ export function MatchFormation({
   const [presetOpen, setPresetOpen] = useState(false);
   const [captureQs, setCaptureQs] = useState<number[] | null>(null);
   const captureRef = useRef<HTMLDivElement>(null);
+  const [pendingPlayer, setPendingPlayer] = useState<string | null>(null);
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const pitchRef = useRef<HTMLDivElement>(null);
+  const dragStartRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const suppressClickRef = useRef(false);
   const [, startAdd] = useTransition();
   const [presetByQ, setPresetByQ] = useState<Record<number, string>>(() => {
     const s: Record<number, string> = {};
@@ -108,6 +114,13 @@ export function MatchFormation({
   const nameById = new Map(pool.map((p) => [p.id, p]));
 
   function onSlotClick(i: number) {
+    // 선수를 먼저 고른 상태 → 그 자리에 배치 (기존 선수는 밀려나 벤치로)
+    if (pendingPlayer) {
+      setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [i]: pendingPlayer } }));
+      setPendingPlayer(null);
+      setSelected(null);
+      return;
+    }
     if (assign[i]) {
       // 채워진 자리 탭 → 비우기
       setAssignByQ((s) => {
@@ -122,13 +135,67 @@ export function MatchFormation({
   }
 
   function fillFromBench(memberId: string) {
-    let slot = selected;
-    if (slot === null || assign[slot]) {
-      slot = slots.findIndex((_, i) => !assign[i]);
+    // 자리를 먼저 고른 상태 → 그 자리에 배치
+    if (selected !== null && !assign[selected]) {
+      const slot = selected;
+      setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [slot]: memberId } }));
+      setSelected(null);
+      setPendingPlayer(null);
+      return;
     }
-    if (slot === -1 || slot === null) return;
-    setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [slot!]: memberId } }));
+    // 아니면 이 선수를 '배치 대기'로 (다시 탭하면 해제) → 이후 빈 자리 탭
+    setPendingPlayer((cur) => (cur === memberId ? null : memberId));
     setSelected(null);
+  }
+
+  // 배치된 선수 위치 교환/이동 (드래그앤드롭)
+  function moveSlot(from: number, to: number) {
+    if (from === to) return;
+    setAssignByQ((s) => {
+      const a = { ...s[quarter] };
+      const fromPid = a[from];
+      if (!fromPid) return s;
+      const toPid = a[to];
+      if (toPid) { a[from] = toPid; a[to] = fromPid; } // 서로 교환
+      else { a[to] = fromPid; delete a[from]; } // 빈 자리로 이동
+      return { ...s, [quarter]: a };
+    });
+  }
+
+  function slotPointerDown(e: React.PointerEvent, i: number) {
+    if (!assign[i]) return; // 배치된 선수만 드래그
+    dragStartRef.current = { x: e.clientX, y: e.clientY, moved: false };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    setDragFrom(i);
+  }
+  function slotPointerMove(e: React.PointerEvent) {
+    if (dragFrom === null || !dragStartRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    if (!dragStartRef.current.moved && Math.hypot(dx, dy) < 6) return;
+    dragStartRef.current.moved = true;
+    const rect = pitchRef.current?.getBoundingClientRect();
+    if (rect) setDragPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }
+  function slotPointerUp(e: React.PointerEvent) {
+    if (dragFrom === null) return;
+    const moved = dragStartRef.current?.moved;
+    const rect = pitchRef.current?.getBoundingClientRect();
+    if (moved && rect) {
+      const px = ((e.clientX - rect.left) / rect.width) * 100;
+      const py = ((e.clientY - rect.top) / rect.height) * 100;
+      let best = -1, bestD = Infinity;
+      slots.forEach((sl, idx) => { const d = Math.hypot(sl.x - px, sl.y - py); if (d < bestD) { bestD = d; best = idx; } });
+      if (best >= 0 && bestD < 16 && best !== dragFrom) moveSlot(dragFrom, best);
+      suppressClickRef.current = true; // 드래그 뒤 따라오는 click(비우기) 무시
+    }
+    setDragFrom(null);
+    setDragPos(null);
+    dragStartRef.current = null;
+  }
+  function slotClick(i: number) {
+    if (suppressClickRef.current) { suppressClickRef.current = false; return; }
+    onSlotClick(i);
   }
 
   function applyPreset(name: string) {
@@ -226,105 +293,7 @@ export function MatchFormation({
         </div>
       </div>
 
-      <div className="text-center text-[11px] text-subtle">
-        {selected !== null ? `${slots[selected].label} 자리 · 아래에서 선수를 탭하세요` : "빈 자리를 탭하고 선수를 넣으세요 · 채운 자리 탭 = 비우기"}
-      </div>
-
-      {/* 피치 */}
-      <div className="relative w-full select-none">
-        <Pitch />
-        <div className="absolute inset-0">
-          {slots.map((slot, i) => {
-            const pid = assign[i];
-            const player = pid ? nameById.get(pid) : null;
-            const isSel = selected === i;
-            return (
-              <button
-                key={i}
-                onClick={() => onSlotClick(i)}
-                style={{ position: "absolute", left: `${slot.x}%`, top: `${slot.y}%`, transform: "translate(-50%,-50%)" }}
-                className="flex flex-col items-center"
-              >
-                {player ? (
-                  <>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium leading-none text-white shadow-md" style={{ background: POSITION_COLOR[groupOf(slot.label)] }}>
-                      {slot.label}
-                    </span>
-                    <span className="mt-0.5 text-[10px] text-white" style={{ textShadow: "0 1px 2px #000" }}>{player.name}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed text-[10px] font-medium leading-none ${isSel ? "border-white bg-white/25 text-white" : "border-white/60 text-white/80"}`}>
-                      {slot.label}
-                    </span>
-                    <span className="mt-0.5 text-[9px] text-white/60">비어있음</span>
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 벤치 */}
-      <div className="rounded-xl border border-divider bg-card soft-card p-3">
-        <div className="mb-2 text-[12px] text-muted">
-          {selected !== null ? (
-            <span className="text-red">{slots[selected].label} 자리에 넣을 선수 선택</span>
-          ) : (
-            <>미배정 <span className="text-faint">{bench.length}명</span> · 탭하면 투입</>
-          )}
-        </div>
-        {bench.length === 0 ? (
-          <div className="py-1 text-center text-[12px] text-faint">전원 배치됨</div>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {bench.map((p) => (
-              <button key={p.id} onClick={() => fillFromBench(p.id)} className="flex items-center gap-1.5 rounded-full border border-line bg-sunken px-2.5 py-1 text-[12px]">
-                <Plus size={12} className="text-subtle" />
-                {p.number != null && <span className="text-muted">{p.number}</span>}
-                {p.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {isManager && roster.length > 0 && (
-          <div className="mt-3 border-t border-divider pt-3">
-            <button onClick={() => setShowRoster((v) => !v)} className="flex items-center gap-1 text-[12px] text-blue">
-              <UserPlus size={13} /> 명단에서 추가 · 참석 안 한 회원 {roster.length}
-            </button>
-            {showRoster && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {roster.map((r) => (
-                  <button key={r.id} onClick={() => addFromRoster(r.id, r.name)} className="rounded-full border border-dashed border-line px-2.5 py-1 text-[12px] text-muted">
-                    <Plus size={11} className="mr-1 inline align-[-1px] text-subtle" />
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* 공유 범위 선택 */}
-      {shareOpen && (
-        <div className="rounded-xl border border-line bg-card soft-card p-3">
-          <div className="mb-2.5 text-center text-[13px] font-medium">무엇을 공유할까요?</div>
-          <div className="flex gap-2">
-            <button onClick={() => startShare([quarter])} className="flex-1 rounded-[10px] border border-line bg-card py-2.5 text-center text-[13px] font-medium">
-              이번 쿼터만<br /><span className="text-[11px] text-subtle">{quarter}쿼터</span>
-            </button>
-            <button onClick={() => startShare(QUARTERS)} className="flex-1 rounded-[10px] bg-navy py-2.5 text-center text-[13px] font-medium text-white">
-              전체 쿼터<br /><span className="text-[11px] text-white/70">1~4쿼터 한 장</span>
-            </button>
-          </div>
-          <button onClick={() => setShareOpen(false)} className="mt-2 w-full py-1 text-[12px] text-subtle">취소</button>
-        </div>
-      )}
-
-      {/* 하단 액션 — 포메이션(드롭다운) · 초기화 · 공유 · 저장 */}
+      {/* 액션 — 포메이션(드롭다운) · 초기화 · 공유 · 저장 */}
       <div className="relative flex gap-1.5">
         {isManager && (
           <>
@@ -332,7 +301,7 @@ export function MatchFormation({
               {preset} <ChevronDown size={13} className="text-subtle" />
             </button>
             {presetOpen && (
-              <div className="absolute bottom-[calc(100%+6px)] left-0 z-10 w-40 overflow-hidden rounded-xl border border-line bg-card soft-card">
+              <div className="absolute top-[calc(100%+6px)] left-0 z-10 w-40 overflow-hidden rounded-xl border border-line bg-card soft-card">
                 {Object.keys(PRESETS).map((name) => (
                   <button
                     key={name}
@@ -356,6 +325,128 @@ export function MatchFormation({
           <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red py-2.5 text-[12px] font-medium text-white disabled:opacity-50">
             <Save size={13} /> {saved ? "수정 저장" : "저장"}
           </button>
+        )}
+      </div>
+
+      {/* 공유 범위 선택 */}
+      {shareOpen && (
+        <div className="rounded-xl border border-line bg-card soft-card p-3">
+          <div className="mb-2.5 text-center text-[13px] font-medium">무엇을 공유할까요?</div>
+          <div className="flex gap-2">
+            <button onClick={() => startShare([quarter])} className="flex-1 rounded-[10px] border border-line bg-card py-2.5 text-center text-[13px] font-medium">
+              이번 쿼터만<br /><span className="text-[11px] text-subtle">{quarter}쿼터</span>
+            </button>
+            <button onClick={() => startShare(QUARTERS)} className="flex-1 rounded-[10px] bg-navy py-2.5 text-center text-[13px] font-medium text-white">
+              전체 쿼터<br /><span className="text-[11px] text-white/70">1~4쿼터 한 장</span>
+            </button>
+          </div>
+          <button onClick={() => setShareOpen(false)} className="mt-2 w-full py-1 text-[12px] text-subtle">취소</button>
+        </div>
+      )}
+
+      <div className="text-center text-[11px] text-subtle">
+        {pendingPlayer
+          ? `${nameById.get(pendingPlayer)?.name ?? ""} 선수를 넣을 자리를 탭하세요`
+          : selected !== null
+            ? `${slots[selected].label} 자리 · 아래에서 선수를 탭하세요`
+            : "빈 자리·선수를 탭해 배치 · 배치된 선수는 드래그로 위치 교환"}
+      </div>
+
+      {/* 피치 */}
+      <div ref={pitchRef} className="relative w-full select-none">
+        <Pitch />
+        <div className="absolute inset-0">
+          {slots.map((slot, i) => {
+            const pid = assign[i];
+            const player = pid ? nameById.get(pid) : null;
+            const isSel = selected === i;
+            const droppable = !!pendingPlayer && !player;
+            return (
+              <button
+                key={i}
+                onClick={() => slotClick(i)}
+                onPointerDown={(e) => slotPointerDown(e, i)}
+                onPointerMove={slotPointerMove}
+                onPointerUp={slotPointerUp}
+                style={{ position: "absolute", left: `${slot.x}%`, top: `${slot.y}%`, transform: "translate(-50%,-50%)", touchAction: "none", opacity: dragFrom === i ? 0.35 : 1 }}
+                className="flex flex-col items-center"
+              >
+                {player ? (
+                  <>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium leading-none text-white shadow-md" style={{ background: POSITION_COLOR[groupOf(slot.label)] }}>
+                      {slot.label}
+                    </span>
+                    <span className="mt-0.5 text-[10px] text-white" style={{ textShadow: "0 1px 2px #000" }}>{player.name}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-[10px] font-medium leading-none ${isSel || droppable ? "border-solid border-white bg-white/25 text-white" : "border-dashed border-white/60 text-white/80"}`}>
+                      {slot.label}
+                    </span>
+                    <span className="mt-0.5 text-[9px] text-white/60">비어있음</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {dragFrom !== null && dragPos && assign[dragFrom] && (
+          <div style={{ position: "absolute", left: dragPos.x, top: dragPos.y, transform: "translate(-50%,-50%)", pointerEvents: "none", zIndex: 20 }} className="flex flex-col items-center">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium leading-none text-white shadow-lg" style={{ background: POSITION_COLOR[groupOf(slots[dragFrom].label)] }}>
+              {slots[dragFrom].label}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 벤치 */}
+      <div className="rounded-xl border border-divider bg-card soft-card p-3">
+        <div className="mb-2 text-[12px] text-muted">
+          {pendingPlayer ? (
+            <span className="text-accent">{nameById.get(pendingPlayer)?.name} 선택됨 · 자리를 탭하세요</span>
+          ) : selected !== null ? (
+            <span className="text-red">{slots[selected].label} 자리에 넣을 선수 선택</span>
+          ) : (
+            <>미배정 <span className="text-faint">{bench.length}명</span> · 탭하면 선택</>
+          )}
+        </div>
+        {bench.length === 0 ? (
+          <div className="py-1 text-center text-[12px] text-faint">전원 배치됨</div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {bench.map((p) => {
+              const active = pendingPlayer === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => fillFromBench(p.id)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] ${active ? "border-accent bg-tint font-bold text-accent" : "border-line bg-sunken"}`}
+                >
+                  <Plus size={12} className={active ? "text-accent" : "text-subtle"} />
+                  {p.number != null && <span className={active ? "text-accent" : "text-muted"}>{p.number}</span>}
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {isManager && roster.length > 0 && (
+          <div className="mt-3 border-t border-divider pt-3">
+            <button onClick={() => setShowRoster((v) => !v)} className="flex items-center gap-1 text-[12px] text-blue">
+              <UserPlus size={13} /> 명단에서 추가 · 참석 안 한 회원 {roster.length}
+            </button>
+            {showRoster && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {roster.map((r) => (
+                  <button key={r.id} onClick={() => addFromRoster(r.id, r.name)} className="rounded-full border border-dashed border-line px-2.5 py-1 text-[12px] text-muted">
+                    <Plus size={11} className="mr-1 inline align-[-1px] text-subtle" />
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
