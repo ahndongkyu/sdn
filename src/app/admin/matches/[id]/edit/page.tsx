@@ -67,7 +67,7 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           <input name="youtube_url" type="url" defaultValue={match.youtube_url ?? ""} placeholder="https://youtu.be/..." className="input" />
         </Field>
 
-        <button className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">수정 저장</button>
+        <ConfirmSubmit message="수정 사항을 저장하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">수정 저장</ConfirmSubmit>
       </form>
 
       {/* 삭제 */}

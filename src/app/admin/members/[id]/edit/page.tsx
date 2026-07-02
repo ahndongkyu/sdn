@@ -54,7 +54,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
           </select>
         </Field>
 
-        <button className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">수정 저장</button>
+        <ConfirmSubmit message="수정 사항을 저장하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">수정 저장</ConfirmSubmit>
       </form>
 
       <form action={deleteMember} className="mt-6 border-t border-divider pt-5">

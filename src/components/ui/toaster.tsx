@@ -34,8 +34,8 @@ export function Toaster() {
       role="status"
       aria-live="polite"
     >
-      <div className="flex items-center gap-2 rounded-full bg-ink/92 px-4 py-2.5 text-[13px] font-medium text-white shadow-lg">
-        <Check size={15} className="text-[#5dcaa5]" />
+      <div className="toast-box flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-medium shadow-lg">
+        <Check size={15} className="text-[#1d9e75]" />
         {msg}
       </div>
     </div>
