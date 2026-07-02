@@ -18,7 +18,7 @@ export async function getMyProfile() {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, email, kakao_nickname, member_id, members(*)")
+    .select("id, email, kakao_nickname, claimed_name, member_id, members(*)")
     .eq("id", user.id)
     .maybeSingle();
 

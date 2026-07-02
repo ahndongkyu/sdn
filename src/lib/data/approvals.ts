@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 export type PendingProfile = {
   id: string;
   kakao_nickname: string | null;
+  claimed_name: string | null;
   email: string | null;
   created_at: string;
 };
@@ -12,7 +13,7 @@ export async function getPendingProfiles(): Promise<PendingProfile[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, kakao_nickname, email, created_at")
+    .select("id, kakao_nickname, claimed_name, email, created_at")
     .is("member_id", null)
     .order("created_at");
   return (data ?? []) as PendingProfile[];
