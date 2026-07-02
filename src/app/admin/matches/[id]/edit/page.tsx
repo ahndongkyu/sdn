@@ -54,6 +54,10 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           <input name="place" defaultValue={match.place ?? ""} placeholder="잠실 보조경기장" className="input" />
         </Field>
 
+        <Field label="장소 주소 (선택 · 홈에서 탭하면 복사)">
+          <input name="place_address" defaultValue={match.place_address ?? ""} placeholder="서울 송파구 올림픽로 25" className="input" />
+        </Field>
+
         <Field label="유니폼">
           <select name="uniform" defaultValue={match.uniform ?? ""} className="input">
             <option value="">선택 안 함</option>

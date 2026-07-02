@@ -8,6 +8,7 @@ import { getMyProfile } from "@/lib/data/auth";
 import { formatDateKo } from "@/lib/format";
 import { POSITION_BADGE } from "@/lib/mock";
 import { RsvpButtons } from "@/components/match/rsvp-buttons";
+import { VideoButton } from "@/components/match/video-button";
 import { MvpVote } from "@/components/match/mvp-vote";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -106,9 +107,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {/* 액션 */}
       <div className="flex gap-2">
         {match.youtube_url ? (
-          <a href={match.youtube_url} target="_blank" rel="noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink py-2.5 text-[13px] font-medium text-white">
+          <VideoButton url={match.youtube_url} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink py-2.5 text-[13px] font-medium text-white">
             <Play size={16} className="text-red" fill="currentColor" /> 영상
-          </a>
+          </VideoButton>
         ) : (
           <span className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-sunken py-2.5 text-[13px] text-faint">
             <Play size={16} /> 영상 없음

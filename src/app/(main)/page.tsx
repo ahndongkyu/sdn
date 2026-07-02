@@ -8,6 +8,8 @@ import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
 import { formatDateKo, dday } from "@/lib/format";
 import { NextMatchActions } from "@/components/match/next-match-actions";
+import { VideoButton } from "@/components/match/video-button";
+import { PlaceCopy } from "@/components/match/place-copy";
 import { BellButton } from "@/components/layout/bell-button";
 
 export default async function HomePage() {
@@ -89,7 +91,11 @@ export default async function HomePage() {
           <div className="mb-3.5 text-center text-[13px] text-muted">
             <Calendar size={14} className="mr-1 inline align-[-2px] text-subtle" />
             {formatDateKo(next.match_date).full} {next.match_time ?? ""}
-            {next.place && <div className="mt-1"><MapPin size={14} className="mr-1 inline align-[-2px] text-subtle" /> {next.place}</div>}
+            {next.place_address ? (
+              <div className="mt-1 flex justify-center"><PlaceCopy place={next.place ?? next.place_address} address={next.place_address} /></div>
+            ) : next.place ? (
+              <div className="mt-1"><MapPin size={14} className="mr-1 inline align-[-2px] text-subtle" /> {next.place}</div>
+            ) : null}
           </div>
           <NextMatchActions matchId={next.id} current={myStatus} hasLineup={hasLineup} />
           <div className="mt-2.5 text-center text-[11px] text-subtle">
@@ -129,9 +135,9 @@ export default async function HomePage() {
           </div>
           <div className="flex gap-2">
             {last.youtube_url && (
-              <a href={last.youtube_url} target="_blank" rel="noreferrer" className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
+              <VideoButton url={last.youtube_url} className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
                 <Play size={15} fill="currentColor" /> 경기 영상
-              </a>
+              </VideoButton>
             )}
             <Link href={`/matches/${last.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
               <ClipboardList size={15} /> 경기 기록
