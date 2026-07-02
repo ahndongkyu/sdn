@@ -4,13 +4,7 @@ import { X, Trash2 } from "lucide-react";
 import { getMemberById } from "@/lib/data/members";
 import { updateMember, deleteMember } from "@/lib/actions/members";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
-
-const POSITIONS = [
-  { v: "FW", label: "FW 공격수" },
-  { v: "MF", label: "MF 미드필더" },
-  { v: "DF", label: "DF 수비수" },
-  { v: "GK", label: "GK 골키퍼" },
-];
+import { PositionSelect } from "@/components/member/position-select";
 
 export default async function EditMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,19 +29,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
           <input name="name" required defaultValue={m.name} className="input" />
         </Field>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <Field label="주 포지션">
-            <select name="position1" defaultValue={m.position1} className="input">
-              {POSITIONS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-            </select>
-          </Field>
-          <Field label="부 포지션 (선택)">
-            <select name="position2" defaultValue={m.position2 ?? ""} className="input">
-              <option value="">없음</option>
-              {POSITIONS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-            </select>
-          </Field>
-        </div>
+        <PositionSelect position1={m.position1} position2={m.position2 ?? undefined} />
 
         <Field label="주발">
           <select name="foot" defaultValue={m.foot} className="input">

@@ -2,13 +2,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { createMember } from "@/lib/actions/members";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
-
-const POSITIONS = [
-  { v: "FW", label: "FW 공격수" },
-  { v: "MF", label: "MF 미드필더" },
-  { v: "DF", label: "DF 수비수" },
-  { v: "GK", label: "GK 골키퍼" },
-];
+import { PositionSelect } from "@/components/member/position-select";
 
 export default function NewMemberPage() {
   return (
@@ -25,14 +19,7 @@ export default function NewMemberPage() {
           <input name="name" required placeholder="홍길동" className="w-full rounded-lg border border-line bg-card px-3 py-2.5 text-sm" />
         </Field>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <Field label="주 포지션">
-            <Select name="position1" options={POSITIONS} />
-          </Field>
-          <Field label="부 포지션 (선택)">
-            <Select name="position2" options={[{ v: "", label: "없음" }, ...POSITIONS]} />
-          </Field>
-        </div>
+        <PositionSelect />
 
         <Field label="주발">
           <Select name="foot" options={[{ v: "R", label: "오른발" }, { v: "L", label: "왼발" }, { v: "both", label: "양발" }]} />

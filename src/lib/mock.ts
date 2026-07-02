@@ -11,6 +11,17 @@ export const POSITION_LABEL: Record<Position, string> = {
   FW: "공격수",
 };
 
+// 상세 포지션 코드 → 라벨
+export const DETAIL_POSITION_LABEL: Record<string, string> = {
+  WF: "윙어",
+  CF: "중앙 공격수",
+  CAM: "공격형 MF",
+  CM: "중앙 MF",
+  CDM: "수비형 MF",
+  SB: "측면 수비",
+  CB: "중앙 수비",
+};
+
 export const POSITION_COLOR: Record<Position, string> = {
   GK: "#ef9f27",
   DF: "#3a7bd5",

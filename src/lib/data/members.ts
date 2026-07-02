@@ -6,7 +6,7 @@ export type MemberRow = {
   name: string;
   nickname: string | null;
   position1: Position;
-  position2: Position | null;
+  position2: string | null; // 상세 포지션 (WF/CF/CAM/CM/CDM/SB/CB) 또는 null
   foot: "L" | "R" | "both";
   role: Role;
   member_numbers: { uniform: string; number: number }[];

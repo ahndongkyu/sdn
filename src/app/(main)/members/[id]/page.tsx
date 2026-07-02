@@ -4,7 +4,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { getMemberById } from "@/lib/data/members";
 import { getMemberStat } from "@/lib/data/stats";
 import { isManager } from "@/lib/data/auth";
-import { POSITION_LABEL, POSITION_BADGE } from "@/lib/mock";
+import { POSITION_LABEL, POSITION_BADGE, DETAIL_POSITION_LABEL } from "@/lib/mock";
 import { Avatar } from "@/components/ui/avatar";
 
 const FOOT_LABEL = { L: "왼발", R: "오른발", both: "양발" } as const;
@@ -47,6 +47,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <span className="rounded-xl px-2.5 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>
             {m.position1} {POSITION_LABEL[m.position1]}
           </span>
+          {m.position2 && (
+            <span className="rounded-xl bg-white/10 px-2.5 py-0.5 text-[11px] text-navy-muted">
+              {m.position2}{DETAIL_POSITION_LABEL[m.position2] ? ` · ${DETAIL_POSITION_LABEL[m.position2]}` : ""}
+            </span>
+          )}
           <span className="rounded-xl bg-white/10 px-2.5 py-0.5 text-[11px] text-navy-muted">{FOOT_LABEL[m.foot]}</span>
         </div>
       </section>
