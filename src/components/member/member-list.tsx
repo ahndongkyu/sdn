@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { POSITION_BADGE, POSITION_LABEL, type Position } from "@/lib/mock";
+import { POSITION_BADGE, POSITION_LABEL, DETAIL_POSITION_LABEL, type Position } from "@/lib/mock";
 import type { MemberRow } from "@/lib/data/members";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -55,7 +55,7 @@ export function MemberList({ members }: { members: MemberRow[] }) {
                         {m.role !== "member" && <span className="rounded-lg bg-red px-1.5 py-px text-[10px] text-white">운영진</span>}
                       </div>
                       <div className="text-[11px] text-subtle">
-                        {m.member_numbers.length ? m.member_numbers.map((n) => `${n.uniform} ${n.number}`).join(" · ") : "등번호 미등록"}
+                        {m.position2 ? `${m.position2} · ${DETAIL_POSITION_LABEL[m.position2] ?? ""}`.replace(/ · $/, "") : "상세 포지션 미설정"}
                       </div>
                     </div>
                     <span className="rounded-[10px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{m.position1}</span>
