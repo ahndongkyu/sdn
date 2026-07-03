@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, UserPlus, RotateCcw, Check, Share2, ChevronDown } from "lucide-react";
+import { Save, Plus, UserPlus, UserMinus, RotateCcw, Check, Share2, ChevronDown, Search } from "lucide-react";
 import { toPng } from "html-to-image";
 import { POSITION_COLOR, type Position } from "@/lib/mock";
 import { saveFormation } from "@/lib/actions/formations";
@@ -77,6 +77,9 @@ export function MatchFormation({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
+  const [manageTab, setManageTab] = useState<"add" | "del">("add");
+  const [manageQ, setManageQ] = useState("");
+  const [manageSel, setManageSel] = useState<Set<string>>(new Set());
   const [shareOpen, setShareOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [captureQs, setCaptureQs] = useState<number[] | null>(null);
@@ -203,11 +206,30 @@ export function MatchFormation({
     setSelected(null);
   }
 
-  // 참석 안 한 회원을 급하게 추가 → 참석(대리) 처리 후 풀에 편입
-  function addFromRoster(memberId: string, name: string) {
+  function toggleManageSel(id: string) {
+    setManageSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function switchManageTab(t: "add" | "del") {
+    setManageTab(t);
+    setManageSel(new Set());
+    setManageQ("");
+  }
+
+  // 선택한 회원 일괄 처리: 추가=대리 참석(going), 제거=미정(undecided)로 되돌림
+  function applyManage() {
+    if (manageSel.size === 0) return;
+    const ids = [...manageSel];
+    const status = manageTab === "add" ? "going" : "undecided";
     startAdd(async () => {
-      await setAttendanceFor(matchId, memberId, "going");
-      toast(`${name} 참석 처리 · 벤치에 추가됐어요`);
+      for (const id of ids) await setAttendanceFor(matchId, id, status);
+      toast(manageTab === "add" ? `${ids.length}명 참석 추가됐어요` : `${ids.length}명 명단에서 제거됐어요`);
+      setManageSel(new Set());
       setShowRoster(false);
       router.refresh();
     });
@@ -431,21 +453,61 @@ export function MatchFormation({
           </div>
         )}
 
-        {isManager && roster.length > 0 && (
+        {isManager && (
           <div className="mt-3 border-t border-divider pt-3">
             <button onClick={() => setShowRoster((v) => !v)} className="flex items-center gap-1 text-[12px] text-blue">
-              <UserPlus size={13} /> 명단에서 추가 · 참석 안 한 회원 {roster.length}
+              <UserPlus size={13} /> 명단 관리 (대리 참석·제거)
             </button>
-            {showRoster && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {roster.map((r) => (
-                  <button key={r.id} onClick={() => addFromRoster(r.id, r.name)} className="rounded-full border border-dashed border-line px-2.5 py-1 text-[12px] text-muted">
-                    <Plus size={11} className="mr-1 inline align-[-1px] text-subtle" />
-                    {r.name}
+            {showRoster && (() => {
+              const q = manageQ.trim();
+              const memberPool = pool.filter((p) => !p.id.startsWith("guest:"));
+              const list = (manageTab === "add" ? roster : memberPool).filter((m) => m.name.includes(q));
+              return (
+                <div className="mt-2.5 space-y-2">
+                  <div className="flex gap-1.5">
+                    <button onClick={() => switchManageTab("add")} className={`flex-1 rounded-lg py-1.5 text-[12px] font-bold ${manageTab === "add" ? "bg-navy text-white" : "bg-sunken text-muted"}`}>미참석 추가 {roster.length}</button>
+                    <button onClick={() => switchManageTab("del")} className={`flex-1 rounded-lg py-1.5 text-[12px] font-bold ${manageTab === "del" ? "bg-navy text-white" : "bg-sunken text-muted"}`}>참석자 제거 {memberPool.length}</button>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-lg border border-line bg-card px-2.5 py-2">
+                    <Search size={14} className="text-subtle" />
+                    <input value={manageQ} onChange={(e) => setManageQ(e.target.value)} placeholder="이름 검색" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-subtle" />
+                  </div>
+
+                  {list.length === 0 ? (
+                    <div className="py-3 text-center text-[12px] text-faint">{manageTab === "add" ? "추가할 미참석 회원이 없어요" : "참석자가 없어요"}</div>
+                  ) : (
+                    <div className="flex max-h-56 flex-col gap-1 overflow-y-auto">
+                      {list.map((m) => {
+                        const on = manageSel.has(m.id);
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => toggleManageSel(m.id)}
+                            className={`flex items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left ${on ? "border-accent bg-tint" : "border-line bg-card"}`}
+                          >
+                            <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border ${on ? "border-accent bg-accent" : "border-line"}`}>
+                              {on && <Check size={12} className="text-white" />}
+                            </span>
+                            <span className="flex-1 text-[13px]">{m.name}</span>
+                            {m.number != null && <span className="text-[11px] text-subtle">{m.number}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={applyManage}
+                    disabled={manageSel.size === 0}
+                    className={`flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] font-bold text-white disabled:opacity-40 ${manageTab === "add" ? "bg-accent" : "bg-danger"}`}
+                  >
+                    {manageTab === "add" ? <UserPlus size={14} /> : <UserMinus size={14} />}
+                    {manageSel.size ? `선택 ${manageSel.size}명 ${manageTab === "add" ? "참석 추가" : "제거"}` : `${manageTab === "add" ? "추가" : "제거"}할 회원 선택`}
                   </button>
-                ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
