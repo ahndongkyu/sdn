@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Megaphone, CalendarDays, Bell } from "lucide-react";
+import { ArrowLeft, Megaphone, CalendarDays, Bell, UserPlus } from "lucide-react";
 import { getNotifications } from "@/lib/data/notifications";
 import { formatDateKo } from "@/lib/format";
 import { NotifSeen } from "@/components/layout/notif-seen";
@@ -30,8 +30,14 @@ export default async function NotificationsPage() {
               href={n.url}
               className={`flex items-center gap-3 px-3.5 py-3 ${i < notifs.length - 1 ? "border-b border-divider" : ""}`}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: n.kind === "notice" ? "#e6f1fb" : "#eaf3de" }}>
-                {n.kind === "notice" ? <Megaphone size={16} className="text-blue" /> : <CalendarDays size={16} className="text-[#3b6d11]" />}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: n.kind === "notice" ? "#e6f1fb" : n.kind === "approval" ? "#fde7d6" : "#eaf3de" }}>
+                {n.kind === "notice" ? (
+                  <Megaphone size={16} className="text-blue" />
+                ) : n.kind === "approval" ? (
+                  <UserPlus size={16} className="text-[#c2731a]" />
+                ) : (
+                  <CalendarDays size={16} className="text-[#3b6d11]" />
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-medium">{n.title}</div>

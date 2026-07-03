@@ -63,6 +63,18 @@ export async function sendPushToMembers(
   );
 }
 
+// 운영진/관리자에게만 푸시 발송.
+// 신청자 등 비운영진 세션에서도 호출 가능하도록 security definer 함수(manager_push_subs)로 구독 조회.
+export async function sendPushToManagers(payload: { title: string; body: string; url?: string }) {
+  if (!ensure()) return;
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("manager_push_subs");
+  await sendToSubscriptions(
+    (data ?? []) as { endpoint: string; p256dh: string; auth: string }[],
+    payload,
+  );
+}
+
 // 전체 구독자에게 푸시 발송 (운영진 세션에서 호출 — RLS로 전체 조회 허용)
 export async function sendPushToAll(payload: { title: string; body: string; url?: string }) {
   if (!ensure()) return;

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/data/auth";
+import { sendPushToManagers } from "@/lib/push";
 
 // 가입 대기자가 본인 이름 제출 → 운영진 승인 화면에서 자동 매칭에 사용
 export async function submitClaimName(formData: FormData) {
@@ -11,6 +12,12 @@ export async function submitClaimName(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !name) return;
   await supabase.from("profiles").update({ claimed_name: name }).eq("id", user.id);
+  // 운영진·관리자에게 가입 신청 알림 푸시
+  await sendPushToManagers({
+    title: "SDN · 새 가입 신청",
+    body: `${name} 님이 승인을 기다리고 있어요`,
+    url: "/admin/approvals",
+  });
   revalidatePath("/pending");
   revalidatePath("/admin/approvals");
 }
