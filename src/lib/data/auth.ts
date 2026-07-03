@@ -1,15 +1,17 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getCurrentUser() {
+// cache(): 한 요청(레이아웃+페이지 등) 안에서 중복 호출돼도 실제 조회는 1회만
+export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 // 로그인 사용자의 profile + 연결된 member(로스터). member_id가 없으면 승인 대기.
-export async function getMyProfile() {
+export const getMyProfile = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,11 +25,11 @@ export async function getMyProfile() {
     .maybeSingle();
 
   return data;
-}
+});
 
 // 현재 사용자가 운영진(manager/admin)인지
-export async function isManager() {
+export const isManager = cache(async () => {
   const profile = await getMyProfile();
   const role = (profile?.members as { role?: string } | null)?.role;
   return role === "manager" || role === "admin";
-}
+});
