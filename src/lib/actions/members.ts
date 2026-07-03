@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isManager } from "@/lib/data/auth";
+import { isManager, getMyProfile } from "@/lib/data/auth";
 
 // 회원 등록 (운영진 전용 — RLS의 is_manager()로 강제)
 export async function createMember(formData: FormData) {
@@ -52,24 +52,25 @@ export async function createMember(formData: FormData) {
   redirect(`/members?toast=${encodeURIComponent(`${name} 회원이 등록됐어요`)}`);
 }
 
-// 회원 수정 (운영진)
+// 회원 수정 — 운영진은 전원, 회원은 본인만. 권한(role)은 운영진만 변경 가능(트리거로도 강제).
 export async function updateMember(formData: FormData) {
-  if (!(await isManager())) return;
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;
 
+  const [manager, me] = await Promise.all([isManager(), getMyProfile()]);
+  const mine = ((me?.member_id as string | null) ?? null) === id;
+  if (!manager && !mine) return;
+
   const supabase = await createClient();
-  await supabase
-    .from("members")
-    .update({
-      name,
-      position1: String(formData.get("position1") ?? "MF"),
-      position2: String(formData.get("position2") ?? "") || null,
-      foot: String(formData.get("foot") ?? "R"),
-      role: String(formData.get("role") ?? "member"),
-    })
-    .eq("id", id);
+  const patch: Record<string, string | null> = {
+    name,
+    position1: String(formData.get("position1") ?? "MF"),
+    position2: String(formData.get("position2") ?? "") || null,
+    foot: String(formData.get("foot") ?? "R"),
+  };
+  if (manager) patch.role = String(formData.get("role") ?? "member"); // 권한은 운영진만
+  await supabase.from("members").update(patch).eq("id", id);
 
   // 등번호 교체 (기존 삭제 후 재삽입)
   await supabase.from("member_numbers").delete().eq("member_id", id);

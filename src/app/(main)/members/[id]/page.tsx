@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { getMemberById } from "@/lib/data/members";
 import { getMemberStat } from "@/lib/data/stats";
-import { isManager } from "@/lib/data/auth";
+import { isManager, getMyProfile } from "@/lib/data/auth";
 import { POSITION_LABEL, POSITION_BADGE, DETAIL_POSITION_LABEL } from "@/lib/mock";
 import { Avatar } from "@/components/ui/avatar";
 
@@ -17,9 +17,10 @@ const UNIFORM_COLOR: Record<string, string> = {
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [m, manager, stat] = await Promise.all([getMemberById(id), isManager(), getMemberStat(id)]);
+  const [m, manager, stat, profile] = await Promise.all([getMemberById(id), isManager(), getMemberStat(id), getMyProfile()]);
   if (!m) notFound();
 
+  const mine = ((profile?.member_id as string | null) ?? null) === id;
   const badge = POSITION_BADGE[m.position1];
 
   return (
@@ -29,9 +30,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <ArrowLeft size={20} className="text-muted" />
           <span className="text-[15px] font-medium">회원정보</span>
         </Link>
-        {manager && (
-          <Link href={`/admin/members/${id}/edit`} className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-xs text-muted">
-            <Pencil size={14} /> 편집
+        {(manager || mine) && (
+          <Link href={`/members/${id}/edit`} className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-xs text-muted">
+            <Pencil size={14} /> {mine && !manager ? "내 정보 수정" : "편집"}
           </Link>
         )}
       </div>
