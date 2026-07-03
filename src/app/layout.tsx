@@ -11,13 +11,13 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "SDN",
-  description: "Saturday Night 축구 클럽 앱",
+  title: "SDN FC",
+  description: "SDN 축구 클럽 앱",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SDN",
+    title: "SDN FC",
   },
 };
 

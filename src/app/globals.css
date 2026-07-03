@@ -240,6 +240,16 @@ body {
   box-shadow: 0 7px 16px -6px rgba(46, 107, 255, 0.5);
   color: #fff;
 }
+/* 로고 워드마크 — 배경 밝기에 따라 검정/흰색 자동 전환 */
+.logo-dark {
+  display: none;
+}
+.dark .logo-light {
+  display: none;
+}
+.dark .logo-dark {
+  display: block;
+}
 /* 프로필 카드 그라데이션 (더보기) */
 .profile-card {
   position: relative;

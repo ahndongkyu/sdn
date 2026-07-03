@@ -10,10 +10,8 @@ export default async function LoginPage() {
   return (
     <div className="app-shell flex items-center justify-center p-4">
       <div className="hero-card w-full rounded-2xl px-6 py-14 text-center">
-        <div className="brand-logo relative mx-auto mb-2 flex h-[84px] w-[84px] items-center justify-center rounded-[20px] text-2xl font-medium">
-          SDN
-        </div>
-        <div className="relative mb-12 text-[10px] text-navy-soft">(로고 자리)</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo/wordmark-white.png" alt="SDN FOOTBALL CLUB" className="relative mx-auto mb-12 h-14 w-auto" />
 
         <div className="relative">
           <KakaoLoginButton />

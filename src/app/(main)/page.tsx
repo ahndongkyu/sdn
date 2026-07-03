@@ -37,12 +37,12 @@ export default async function HomePage() {
     <div className="space-y-4">
       {/* 브랜드 헤더 */}
       <div className="flex items-center justify-between pb-1 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="brand-logo flex h-11 w-11 items-center justify-center rounded-[14px] text-[13px] font-bold tracking-wide">SDN</div>
-          <div>
-            <div className="text-[17px] font-bold text-fg">SDN FC</div>
-            <div className="text-[12px] text-subtle">{member?.name ?? "회원"}님 환영합니다</div>
-          </div>
+        <div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/wordmark-black.png" alt="SDN FC" className="logo-light h-7 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/wordmark-white.png" alt="SDN FC" className="logo-dark h-7 w-auto" />
+          <div className="mt-1.5 text-[12px] text-subtle">{member?.name ?? "회원"}님 환영합니다</div>
         </div>
         <BellButton latestAt={latestNotifAt} />
       </div>

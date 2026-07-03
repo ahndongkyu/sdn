@@ -1,7 +1,7 @@
 {
-  "name": "SDN — Saturday Night",
-  "short_name": "SDN",
-  "description": "Saturday Night 축구 클럽 앱",
+  "name": "SDN FOOTBALL CLUB",
+  "short_name": "SDN FC",
+  "description": "SDN 축구 클럽 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#16234d",
@@ -9,10 +9,22 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
