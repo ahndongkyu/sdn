@@ -25,8 +25,20 @@ export async function getMatchWeather(
     if (!res.ok) return null;
     const data = await res.json();
     const hour = time ? parseInt(time.slice(0, 2), 10) : 21;
+    const times: string[] = data.hourly?.time ?? [];
+    if (times.length === 0) return null; // 예보 범위 밖(먼 날짜) → 날씨 없음
     const target = `${dateIso}T${String(hour).padStart(2, "0")}:00`;
-    const idx: number = data.hourly?.time?.indexOf(target) ?? -1;
+    let idx = times.indexOf(target);
+    if (idx < 0) {
+      // 정확한 시각이 없으면 그날 중 목표 시각에 가장 가까운 시간 사용
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < times.length; i++) {
+        if (!times[i].startsWith(dateIso)) continue;
+        const diff = Math.abs(parseInt(times[i].slice(11, 13), 10) - hour);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      idx = best;
+    }
     if (idx < 0) return null;
     return {
       temp: Math.round(data.hourly.temperature_2m[idx]),
