@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, Shirt, Goal, Crown, CircleCheck, Pencil } from "lucide-react";
+import { ArrowLeft, Play, Shirt, Crown, CircleCheck, Pencil, Calendar, MapPin } from "lucide-react";
 import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMembers } from "@/lib/data/members";
 import { getGuests } from "@/lib/data/guests";
@@ -42,6 +42,23 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   };
   const r = result(match.score_for, match.score_against);
 
+  // 득점 집계: 득점자별 골 수 + 도움(중복 제거) · 자책골은 별도
+  const scorerMap = new Map<string, { name: string; count: number; assists: string[] }>();
+  for (const g of goals) {
+    if (g.is_own_goal) continue;
+    const key = g.scorer_id ?? "?";
+    const name = g.scorer_id ? nameOf.get(g.scorer_id) ?? "선수" : "득점";
+    const e = scorerMap.get(key) ?? { name, count: 0, assists: [] };
+    e.count += 1;
+    if (g.assist_id) {
+      const an = nameOf.get(g.assist_id);
+      if (an && !e.assists.includes(an)) e.assists.push(an);
+    }
+    scorerMap.set(key, e);
+  }
+  const scorers = [...scorerMap.values()].sort((a, b) => b.count - a.count);
+  const ownGoals = goals.filter((g) => g.is_own_goal).length;
+
   // MOM 투표 상태: 결과 입력됨 + 마감시각 기준
   const hasResult = match.score_for !== null;
   const voteClosed = hasResult && (!match.mom_vote_close || Date.now() >= new Date(match.mom_vote_close).getTime());
@@ -74,23 +91,60 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
-      {/* 헤더 */}
-      <section className="rounded-2xl bg-navy p-4 text-white">
-        <div className="mb-3 text-center text-[11px] text-navy-muted">
-          {match.type === "self" ? "자체전" : "정규 매치"} · {d.full} {match.match_time ?? ""} {match.place ? `· ${match.place}` : ""}
-        </div>
-        <div className="flex items-center justify-center gap-4">
-          <Team badge="SDN" label="우리팀" cls="bg-red" />
-          {past && match.score_for !== null ? (
-            <div className="text-center">
-              <div className="text-3xl font-medium leading-none">{match.score_for} : {match.score_against}</div>
-              <div className="mt-1.5 text-[11px]" style={{ color: r.color }}>{r.label}</div>
-            </div>
-          ) : (
-            <span className="text-[15px] text-navy-muted">VS</span>
+      {/* 스코어 + 득점 기록 통합 카드 */}
+      <section className="rounded-2xl border border-line bg-card soft-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-[12px] text-subtle">{match.type === "self" ? "자체전" : "정규 매치"}</span>
+          {past && match.score_for !== null && (
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: r.color }}>{r.label}</span>
           )}
-          <Team badge={match.opponent.slice(0, 2)} label={match.opponent} cls="bg-navy-soft text-navy-muted" />
         </div>
+
+        <div className="flex items-center justify-center gap-4">
+          <div className="text-center">
+            <div className="brand-logo mx-auto mb-1.5 flex h-11 w-11 items-center justify-center rounded-[13px] text-[11px] font-bold">SDN</div>
+            <div className="text-[12px] font-bold text-fg">SDN</div>
+          </div>
+          {past && match.score_for !== null ? (
+            <div className="text-[30px] font-extrabold leading-none tracking-[1px] text-fg tabular-nums">{match.score_for} : {match.score_against}</div>
+          ) : (
+            <span className="text-[15px] text-subtle">VS</span>
+          )}
+          <div className="text-center">
+            <div className="mx-auto mb-1.5 flex h-11 w-11 items-center justify-center rounded-[13px] bg-sunken text-[11px] font-bold text-muted">{match.opponent.slice(0, 2)}</div>
+            <div className="text-[12px] font-bold text-muted">{match.opponent}</div>
+          </div>
+        </div>
+
+        <div className="mt-3 text-center leading-relaxed">
+          <div className="text-[12px] text-muted"><Calendar size={12} className="mr-1 inline align-[-1px] text-subtle" />{d.full} {match.match_time ?? ""}</div>
+          {match.place && <div className="text-[12px] text-muted"><MapPin size={12} className="mr-1 inline align-[-1px] text-subtle" />{match.place}</div>}
+        </div>
+
+        {past && (scorers.length > 0 || ownGoals > 0) && (
+          <div className="mt-3 border-t border-divider pt-3">
+            <div className="mb-2 text-[12px] font-bold text-subtle">득점 기록</div>
+            <div className="space-y-1.5">
+              {scorers.map((s, i) => (
+                <div key={i}>
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 text-sm font-medium">{s.name}</span>
+                    <span className="text-[15px] leading-none tracking-tight">{"⚽".repeat(s.count)}</span>
+                  </div>
+                  {s.assists.length > 0 && (
+                    <div className="text-[11px] text-subtle"><span className="text-faint">도움</span> {s.assists.join(" ")}</div>
+                  )}
+                </div>
+              ))}
+              {ownGoals > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-sm text-muted">자책골</span>
+                  <span className="text-[15px] leading-none tracking-tight">{"⚽".repeat(ownGoals)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 예정: RSVP */}
@@ -119,35 +173,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           <Shirt size={17} /> 포메이션
         </Link>
       </div>
-
-      {/* 득점 기록 */}
-      {past && goals.length > 0 && (
-        <div>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-[13px] text-muted">득점 기록</h2>
-            <span className="text-[11px] text-subtle">{goals.length}골</span>
-          </div>
-          <div className="overflow-hidden rounded-xl border border-divider bg-card soft-card">
-            {goals.map((g, i) => {
-              const scorer = g.is_own_goal ? "자책골 (상대)" : g.scorer_id ? nameOf.get(g.scorer_id) : "득점";
-              const assist = g.assist_id ? nameOf.get(g.assist_id) : null;
-              return (
-                <div key={i} className={`flex items-center gap-2.5 px-3.5 py-3 ${i < goals.length - 1 ? "border-b border-divider" : ""}`}>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#eaf6f0]">
-                    <Goal size={14} className="text-[#1d9e75]" />
-                  </span>
-                  <span className="flex-1 text-sm font-medium">{scorer}</span>
-                  {assist ? (
-                    <span className="text-[12px] text-muted"><span className="text-faint">도움</span> {assist}</span>
-                  ) : (
-                    <span className="text-[11px] text-faint">도움 없음</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* MVP */}
       {mvpName && (
@@ -220,15 +245,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Team({ badge, label, cls }: { badge: string; label: string; cls: string }) {
-  return (
-    <div className="text-center">
-      <div className={`mx-auto mb-1.5 flex h-12 w-12 items-center justify-center rounded-[10px] text-sm font-medium text-white ${cls}`}>{badge}</div>
-      <div className="text-xs">{label}</div>
     </div>
   );
 }
