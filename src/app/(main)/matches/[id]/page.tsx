@@ -122,27 +122,22 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </div>
 
         {past && (scorers.length > 0 || ownGoals > 0) && (
-          <div className="mt-3 border-t border-divider pt-3">
-            <div className="mb-2 text-[12px] font-bold text-subtle">득점 기록</div>
-            <div className="space-y-1.5">
-              {scorers.map((s, i) => (
-                <div key={i}>
-                  <div className="flex items-center gap-2">
-                    <span className="flex-1 text-sm font-medium">{s.name}</span>
-                    <span className="text-[15px] leading-none tracking-tight">{"⚽".repeat(s.count)}</span>
-                  </div>
-                  {s.assists.length > 0 && (
-                    <div className="text-[11px] text-subtle"><span className="text-faint">도움</span> {s.assists.join(" ")}</div>
-                  )}
-                </div>
-              ))}
-              {ownGoals > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="flex-1 text-sm text-muted">자책골</span>
-                  <span className="text-[15px] leading-none tracking-tight">{"⚽".repeat(ownGoals)}</span>
-                </div>
-              )}
-            </div>
+          <div className="mt-3 flex flex-col items-center gap-2 border-t border-divider pt-3.5">
+            {scorers.map((s, i) => (
+              <div key={i} className="text-center">
+                <span className="text-sm font-medium text-fg">{s.name}</span>{" "}
+                <span className="text-[13px] align-[-1px]">{"⚽".repeat(s.count)}</span>
+                {s.assists.length > 0 && (
+                  <div className="mt-0.5 text-[11px] text-subtle"><span className="text-faint">도움</span> {s.assists.join(" ")}</div>
+                )}
+              </div>
+            ))}
+            {ownGoals > 0 && (
+              <div className="text-center">
+                <span className="text-sm text-muted">자책골</span>{" "}
+                <span className="text-[13px] align-[-1px]">{"⚽".repeat(ownGoals)}</span>
+              </div>
+            )}
           </div>
         )}
       </section>
