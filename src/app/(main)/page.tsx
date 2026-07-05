@@ -37,14 +37,11 @@ export default async function HomePage() {
     <div className="space-y-4">
       {/* 브랜드 헤더 */}
       <div className="flex items-center justify-between pb-1 pt-1">
-        <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/wordmark-black.png" alt="SDN FC" className="logo-light h-7 w-auto" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/wordmark-white.png" alt="SDN FC" className="logo-dark h-7 w-auto" />
-          <div className="mt-1.5 text-[12px] text-subtle">{member?.name ?? "회원"}님 환영합니다</div>
+        <span className="brand-mark h-7 w-[78px]" role="img" aria-label="SDN FC" />
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] text-subtle">{member?.name ?? "회원"}님</span>
+          <BellButton latestAt={latestNotifAt} />
         </div>
-        <BellButton latestAt={latestNotifAt} />
       </div>
 
       {/* 팀 시즌 성적 — 히어로 */}
@@ -165,16 +162,20 @@ function HeroStat({ value, label, accent }: { value: string | number; label: str
     </div>
   );
 }
-function Crest({ label, badge, opp, small }: { label: string; badge: string; opp?: boolean; small?: boolean }) {
-  const size = small ? "h-[46px] w-[46px]" : "h-[46px] w-[46px]";
+function Crest({ label, badge, opp }: { label: string; badge: string; opp?: boolean; small?: boolean }) {
   return (
     <div className="text-center">
-      <div
-        className={`mx-auto mb-2 flex ${size} items-center justify-center rounded-[14px] text-[11.5px] font-bold ${opp ? "text-muted" : "text-white"}`}
-        style={opp ? { background: "var(--sdn-surface-2)" } : { background: "linear-gradient(150deg, var(--sdn-blue), #14213d)" }}
-      >
-        {badge}
-      </div>
+      {opp ? (
+        <div
+          className="mx-auto mb-2 flex h-[46px] w-[46px] items-center justify-center rounded-[14px] text-[11.5px] font-bold text-muted"
+          style={{ background: "var(--sdn-surface-2)" }}
+        >
+          {badge}
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/logo/crest.png" alt="SDN" className="mx-auto mb-2 h-[46px] w-[46px] rounded-[14px]" />
+      )}
       <div className={`max-w-[70px] truncate text-[12px] font-bold ${opp ? "text-muted" : "text-fg"}`}>{label}</div>
     </div>
   );

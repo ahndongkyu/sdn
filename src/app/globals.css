@@ -240,15 +240,15 @@ body {
   box-shadow: 0 7px 16px -6px rgba(46, 107, 255, 0.5);
   color: #fff;
 }
-/* 로고 워드마크 — 배경 밝기에 따라 검정/흰색 자동 전환 */
-.logo-dark {
-  display: none;
-}
-.dark .logo-light {
-  display: none;
-}
-.dark .logo-dark {
+/* 로고 워드마크 — 마스크로 색조를 테마별 제어 (PNG 알파를 마스크로 사용) */
+.brand-mark {
   display: block;
+  background-color: #1b2547; /* 라이트: 네이비 잉크 (순검정보다 부드럽게) */
+  -webkit-mask: url("/logo/wordmark-white.png") left center / contain no-repeat;
+  mask: url("/logo/wordmark-white.png") left center / contain no-repeat;
+}
+.dark .brand-mark {
+  background-color: #d3dcec; /* 다크: 차분한 오프화이트 (톤다운) */
 }
 /* 프로필 카드 그라데이션 (더보기) */
 .profile-card {
