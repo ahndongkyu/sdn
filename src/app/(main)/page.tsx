@@ -173,8 +173,10 @@ function Crest({ label, badge, opp }: { label: string; badge: string; opp?: bool
           {badge}
         </div>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src="/logo/crest.png" alt="SDN" className="mx-auto mb-2 h-[46px] w-[46px] rounded-[14px]" />
+        <div className="mx-auto mb-2 flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-white ring-1 ring-black/5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/crest.png" alt="SDN" className="h-[38px] w-[38px]" />
+        </div>
       )}
       <div className={`max-w-[70px] truncate text-[12px] font-bold ${opp ? "text-muted" : "text-fg"}`}>{label}</div>
     </div>
