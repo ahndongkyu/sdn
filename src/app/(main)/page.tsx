@@ -162,22 +162,16 @@ function HeroStat({ value, label, accent }: { value: string | number; label: str
     </div>
   );
 }
-function Crest({ label, badge, opp }: { label: string; badge: string; opp?: boolean; small?: boolean }) {
+function Crest({ label, badge, opp, small }: { label: string; badge: string; opp?: boolean; small?: boolean }) {
+  const size = small ? "h-[46px] w-[46px]" : "h-[46px] w-[46px]";
   return (
     <div className="text-center">
-      {opp ? (
-        <div
-          className="mx-auto mb-2 flex h-[46px] w-[46px] items-center justify-center rounded-[14px] text-[11.5px] font-bold text-muted"
-          style={{ background: "var(--sdn-surface-2)" }}
-        >
-          {badge}
-        </div>
-      ) : (
-        <div className="mx-auto mb-2 flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-white ring-1 ring-black/5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/crest.png" alt="SDN" className="h-[38px] w-[38px]" />
-        </div>
-      )}
+      <div
+        className={`mx-auto mb-2 flex ${size} items-center justify-center rounded-[14px] text-[11.5px] font-bold ${opp ? "text-muted" : "text-white"}`}
+        style={opp ? { background: "var(--sdn-surface-2)" } : { background: "linear-gradient(150deg, var(--sdn-blue), #14213d)" }}
+      >
+        {badge}
+      </div>
       <div className={`max-w-[70px] truncate text-[12px] font-bold ${opp ? "text-muted" : "text-fg"}`}>{label}</div>
     </div>
   );
