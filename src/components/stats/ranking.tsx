@@ -43,7 +43,12 @@ export function RankingList({ stats }: { stats: MemberStat[] }) {
             const top = i === 0;
             return (
               <div key={s.id} className={`flex items-center gap-2.5 px-3 py-2.5 ${i < ranked.length - 1 ? "border-b border-divider" : ""}`}>
-                <span className={`w-[18px] text-center text-[13px] ${top ? "font-medium text-[#854f0b]" : "text-subtle"}`}>{i + 1}</span>
+                <span
+                  className={`flex h-[19px] w-[19px] items-center justify-center rounded-full text-center ${top ? "text-[12px] font-extrabold" : "text-[13px] text-subtle"}`}
+                  style={top ? { background: "var(--sdn-pink)", color: "#6d1832" } : undefined}
+                >
+                  {i + 1}
+                </span>
                 <Avatar size={30} />
                 <span className="flex-1 text-sm">{s.name}</span>
                 <span className="rounded-[10px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{s.position1}</span>

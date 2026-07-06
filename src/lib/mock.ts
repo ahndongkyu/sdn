@@ -26,7 +26,7 @@ export const POSITION_COLOR: Record<Position, string> = {
   GK: "#ef9f27",
   DF: "#3a7bd5",
   MF: "#639922",
-  FW: "#d85a30",
+  FW: "#e8568a", // 핑크 (PDF 액센트 · GK 골드와 구분)
 };
 
 // 포지션 칩 배경/글자 (밝은 배지용)
@@ -34,7 +34,7 @@ export const POSITION_BADGE: Record<Position, { bg: string; fg: string }> = {
   GK: { bg: "#faeeda", fg: "#854f0b" },
   DF: { bg: "#e6f1fb", fg: "#0c447c" },
   MF: { bg: "#eaf3de", fg: "#3b6d11" },
-  FW: { bg: "#faeeda", fg: "#854f0b" },
+  FW: { bg: "#fce4ee", fg: "#b23368" }, // 핑크
 };
 
 export type Member = {
