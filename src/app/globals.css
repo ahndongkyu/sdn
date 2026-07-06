@@ -190,6 +190,7 @@ body {
   background: var(--sdn-bg);
   color: var(--sdn-ink);
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain; /* 네이티브 당겨서 새로고침 억제 → 커스텀 PTR 사용 */
 }
 
 .app-shell {

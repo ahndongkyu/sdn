@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { PullToRefresh } from "@/components/layout/pull-to-refresh";
 import { ToastFromQuery } from "@/components/ui/toast-from-query";
 import { getMyProfile } from "@/lib/data/auth";
 
@@ -18,7 +19,9 @@ export default async function MainLayout({
       <Suspense>
         <ToastFromQuery />
       </Suspense>
-      <main className="flex-1 px-4 pb-4 pt-4">{children}</main>
+      <main className="flex-1 px-4 pb-4 pt-4">
+        <PullToRefresh>{children}</PullToRefresh>
+      </main>
       <BottomNav />
     </div>
   );
