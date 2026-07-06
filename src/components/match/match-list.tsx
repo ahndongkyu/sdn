@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import { formatDateKo, dday } from "@/lib/format";
 import type { MatchRow } from "@/lib/data/matches";
 
@@ -11,7 +11,7 @@ function past(m: MatchRow) {
   return m.score_for !== null || m.match_date < today;
 }
 
-// 승/무/패 배지
+// 승/무/패
 function outcome(f: number | null, a: number | null) {
   if (f == null || a == null) return null;
   if (f > a) return { label: "승", color: "var(--color-win)" };
@@ -24,8 +24,8 @@ type Status = "all" | "upcoming" | "done" | "self";
 export function MatchList({ matches }: { matches: MatchRow[] }) {
   const [month, setMonth] = useState<string>("all");
   const [status, setStatus] = useState<Status>("all");
+  const [openState, setOpenState] = useState<Record<string, boolean>>({});
 
-  // 데이터에 존재하는 월 목록
   const months = useMemo(() => {
     const set = new Map<string, number>();
     for (const m of matches) {
@@ -55,7 +55,6 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
     self: matches.filter((m) => m.type === "self").length,
   };
 
-  // 월별 그룹 (filtered가 날짜 내림차순 → 그룹도 내림차순 유지)
   const groups = useMemo(() => {
     const curYear = new Date().getFullYear();
     const out: { key: string; label: string; items: MatchRow[] }[] = [];
@@ -72,6 +71,11 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
     }
     return out;
   }, [filtered]);
+
+  // 전체 보기(월·상태 필터 없음)일 때만 아코디언 — 최근 2개월 펼침, 나머지 접힘
+  const accordion = month === "all" && status === "all";
+  const isOpen = (key: string, idx: number) => (accordion ? openState[key] ?? idx < 2 : true);
+  const toggle = (key: string, idx: number) => setOpenState((s) => ({ ...s, [key]: !(s[key] ?? idx < 2) }));
 
   return (
     <div className="space-y-3">
@@ -104,56 +108,81 @@ export function MatchList({ matches }: { matches: MatchRow[] }) {
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-divider bg-card soft-card px-4 py-10 text-center text-sm text-muted">해당 조건의 경기가 없어요.</div>
       ) : (
-        <div className="space-y-4">
-          {groups.map((g) => (
-            <div key={g.key}>
-              {/* 월 구분 헤더 */}
-              <div className="mb-2 flex items-center gap-2 px-0.5">
-                <span className="text-[13.5px] font-bold text-fg">{g.label}</span>
-                <span className="text-[11px] text-subtle">{g.items.length}경기</span>
-                <span className="h-px flex-1 bg-line" />
-              </div>
-              <div className="space-y-2">
-          {g.items.map((m) => {
-            const d = formatDateKo(m.match_date);
-            const isPastM = past(m);
-            const done = isPastM && m.score_for !== null;
-            const oc = done && m.type !== "self" ? outcome(m.score_for, m.score_against) : null;
+        <div className="space-y-3">
+          {groups.map((g, gi) => {
+            const open = isOpen(g.key, gi);
             return (
-              <Link key={m.id} href={`/matches/${m.id}`} className="flex items-stretch gap-2.5">
-                <div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-divider bg-card py-1">
-                  <span className="text-base font-medium leading-none">{new Date(m.match_date + "T00:00:00").getDate()}</span>
-                  <span className="mt-0.5 text-[10px] text-subtle">{d.weekday}</span>
-                </div>
-                <div className={`flex flex-1 items-center gap-2 rounded-lg px-3 py-2.5 ${done ? "border border-divider bg-card" : "soft-card-lg bg-navy text-white"}`}>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1.5">
-                      {m.type === "self" && <span className={`rounded px-1.5 py-px text-[10px] ${done ? "bg-sunken text-muted" : "bg-white/10 text-navy-muted"}`}>자체</span>}
-                      <span className={`text-[13px] font-medium ${done ? "" : "text-white"}`}>{m.type === "self" ? "자체전" : `vs ${m.opponent}`}</span>
-                    </div>
-                    <div className={`mt-0.5 text-[11px] ${done ? "text-muted" : "text-navy-muted"}`}>
-                      <Calendar size={11} className="mr-1 inline align-[-1px]" />
-                      {m.match_time ?? ""} {m.place ? `· ${m.place}` : ""}
-                    </div>
+              <div key={g.key}>
+                {/* 월 헤더 (탭하면 접기/펼치기) */}
+                <button
+                  onClick={() => toggle(g.key, gi)}
+                  disabled={!accordion}
+                  className="mb-2 flex w-full items-center gap-2 px-0.5 disabled:cursor-default"
+                >
+                  <span className="text-[13.5px] font-bold text-fg">{g.label}</span>
+                  <span className="text-[11px] text-subtle">{g.items.length}경기</span>
+                  <span className="h-px flex-1 bg-line" />
+                  {accordion && <ChevronDown size={16} className={`text-subtle transition-transform ${open ? "" : "-rotate-90"}`} />}
+                </button>
+
+                {open && (
+                  <div className="space-y-2">
+                    {g.items.map((m) => (
+                      <MatchRowCard key={m.id} m={m} />
+                    ))}
                   </div>
-                  {done ? (
-                    <div className="flex items-center gap-1.5">
-                      {oc && <span className="rounded-[8px] px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: oc.color }}>{oc.label}</span>}
-                      <span className="text-sm font-medium tabular-nums">{m.score_for}:{m.score_against}</span>
-                    </div>
-                  ) : (
-                    <span className="rounded-[10px] bg-red px-2 py-0.5 text-[11px] font-medium text-white">{dday(m.match_date)}</span>
-                  )}
-                </div>
-              </Link>
+                )}
+              </div>
             );
           })}
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>
+  );
+}
+
+function MatchRowCard({ m }: { m: MatchRow }) {
+  const d = formatDateKo(m.match_date);
+  const day = new Date(m.match_date + "T00:00:00").getDate();
+  const done = past(m) && m.score_for !== null;
+  const oc = done && m.type !== "self" ? outcome(m.score_for, m.score_against) : null;
+  const title = m.type === "self" ? "자체전" : `vs ${m.opponent}`;
+  const barColor = !done ? "var(--sdn-accent)" : oc ? oc.color : "var(--sdn-border)";
+
+  return (
+    <Link
+      href={`/matches/${m.id}`}
+      className={`relative flex items-center gap-3 overflow-hidden rounded-[13px] py-2.5 pl-3.5 pr-3 ${
+        done ? "border border-divider bg-card" : "soft-card-lg bg-navy text-white"
+      }`}
+    >
+      {/* 좌측 결과 컬러 바 */}
+      <span className="absolute inset-y-0 left-0 w-[4px]" style={{ background: barColor }} aria-hidden />
+
+      <div className="w-7 shrink-0 text-center">
+        <div className="text-[17px] font-extrabold leading-none tabular-nums">{day}</div>
+        <div className={`mt-0.5 text-[10px] ${done ? "text-subtle" : "text-navy-muted"}`}>{d.weekday}</div>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className={`truncate text-[13.5px] font-bold ${done ? "" : "text-white"}`}>{title}</div>
+        <div className={`mt-0.5 text-[11px] ${done ? "text-subtle" : "text-navy-muted"}`}>
+          <Calendar size={11} className="mr-1 inline align-[-1px]" />
+          {m.match_time ?? ""} {m.place ? `· ${m.place}` : ""}
+        </div>
+      </div>
+
+      {done ? (
+        <div className="flex shrink-0 items-center gap-1.5">
+          {oc && <span className="text-[11px] font-extrabold" style={{ color: oc.color }}>{oc.label}</span>}
+          <span className="min-w-[50px] text-right text-[15px] font-extrabold tabular-nums" style={oc ? { color: oc.color } : undefined}>
+            {m.score_for} : {m.score_against}
+          </span>
+        </div>
+      ) : (
+        <span className="shrink-0 rounded-[10px] bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">{dday(m.match_date)}</span>
+      )}
+    </Link>
   );
 }
 
