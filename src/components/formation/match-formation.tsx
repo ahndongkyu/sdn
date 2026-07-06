@@ -87,7 +87,7 @@ export function MatchFormation({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
-  const [benchSort, setBenchSort] = useState<"default" | "low">("default");
+  const [benchSort, setBenchSort] = useState<"name" | "low">("name");
   const [manageTab, setManageTab] = useState<"add" | "del">("add");
   const [manageQ, setManageQ] = useState("");
   const [manageSel, setManageSel] = useState<Set<string>>(new Set());
@@ -139,7 +139,10 @@ export function MatchFormation({
   const recLo = Math.floor(rec);
   const recHi = Math.ceil(rec);
   const avgQ = pool.length ? [...quarterCountById.values()].reduce((a, b) => a + b, 0) / pool.length : 0;
-  const sortedBench = benchSort === "low" ? [...bench].sort((a, b) => qCount(a.id) - qCount(b.id)) : bench;
+  const sortedBench =
+    benchSort === "low"
+      ? [...bench].sort((a, b) => qCount(a.id) - qCount(b.id) || a.name.localeCompare(b.name, "ko"))
+      : [...bench].sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
   function onSlotClick(i: number) {
     // 선수를 먼저 고른 상태 → 그 자리에 배치 (기존 선수는 밀려나 벤치로)
@@ -464,18 +467,26 @@ export function MatchFormation({
             )}
           </div>
           {bench.length > 0 && pendingPlayer === null && selected === null && (
-            <button
-              onClick={() => setBenchSort((s) => (s === "low" ? "default" : "low"))}
-              className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${benchSort === "low" ? "bg-navy text-white" : "bg-sunken text-muted"}`}
-            >
-              덜 뛴 순
-            </button>
+            <div className="flex shrink-0 gap-1">
+              <button
+                onClick={() => setBenchSort("name")}
+                className={`rounded-md px-2 py-1 text-[11px] font-bold ${benchSort === "name" ? "bg-navy text-white" : "bg-sunken text-muted"}`}
+              >
+                이름순
+              </button>
+              <button
+                onClick={() => setBenchSort("low")}
+                className={`rounded-md px-2 py-1 text-[11px] font-bold ${benchSort === "low" ? "bg-navy text-white" : "bg-sunken text-muted"}`}
+              >
+                덜 뛴 순
+              </button>
+            </div>
           )}
         </div>
 
         {bench.length > 0 && (
           <div className="mb-2.5 rounded-lg bg-sunken px-2.5 py-1.5 text-[11px] text-subtle">
-            평균 <b className="text-accent">{avgQ.toFixed(1)}</b>쿼터 · 참석 {pool.length}명 · 권장 {recLo === recHi ? recLo : `${recLo}~${recHi}`}쿼터 — 적은 사람 먼저
+            평균 <b className="text-accent">{avgQ.toFixed(1)}</b>쿼터 · 참석 {pool.length}명 · 권장 {recLo === recHi ? recLo : `${recLo}~${recHi}`}쿼터
           </div>
         )}
 
