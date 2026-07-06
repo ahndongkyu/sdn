@@ -6,6 +6,7 @@ export type MemberStat = {
   id: string;
   name: string;
   position1: Position;
+  position2: string | null; // 상세 포지션 코드 (WF·CF·CM…)
   goals: number;
   assists: number;
   attackPoints: number; // 득점 + 도움
@@ -17,7 +18,7 @@ export type MemberStat = {
 export async function getMemberStats(season: number = currentSeason()): Promise<MemberStat[]> {
   const supabase = await createClient();
   const [membersRes, goalsRes, attRes, matchesRes, votesRes] = await Promise.all([
-    supabase.from("members").select("id, name, position1").eq("status", "active"),
+    supabase.from("members").select("id, name, position1, position2").eq("status", "active"),
     supabase.from("goals").select("match_id, scorer_id, assist_id"),
     supabase.from("attendances").select("match_id, member_id").eq("status", "going"),
     supabase.from("matches").select("id, match_date, mom_vote_close"),
@@ -72,6 +73,7 @@ export async function getMemberStats(season: number = currentSeason()): Promise<
       id: m.id,
       name: m.name,
       position1: m.position1 as Position,
+      position2: ((m as { position2?: string | null }).position2 as string | null) ?? null,
       goals: goalsN,
       assists: assistsN,
       attackPoints: goalsN + assistsN,
