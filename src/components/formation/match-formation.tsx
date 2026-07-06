@@ -58,6 +58,16 @@ const GROUP: Record<string, Position> = {
 };
 const groupOf = (label: string): Position => GROUP[label] ?? "MF";
 const QUARTERS = [1, 2, 3, 4];
+const TOTAL_SLOTS = 11 * 4; // 필드 11명 × 4쿼터
+
+// 총 출전 쿼터 수 배지 색 (권장 범위 기준 상대 색)
+function quarterBadgeColor(c: number, recLo: number, recHi: number): string {
+  if (c >= recHi) return "#16b585"; // 충분
+  if (c >= recLo) return "#2f9e8b"; // 권장 하한
+  if (c === 0) return "#c2cad6"; // 미배치
+  if (c >= recLo - 1) return "#e8912b"; // 약간 적음
+  return "#dc2f3c"; // 매우 적음
+}
 
 type Assign = Record<number, string>; // slotIndex → memberId
 
@@ -77,6 +87,7 @@ export function MatchFormation({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initial != null);
   const [showRoster, setShowRoster] = useState(false);
+  const [benchSort, setBenchSort] = useState<"default" | "low">("default");
   const [manageTab, setManageTab] = useState<"add" | "del">("add");
   const [manageQ, setManageQ] = useState("");
   const [manageSel, setManageSel] = useState<Set<string>>(new Set());
@@ -115,6 +126,20 @@ export function MatchFormation({
   const bench = pool.filter((p) => !assignedIds.has(p.id));
   const filled = Object.keys(assign).length;
   const nameById = new Map(pool.map((p) => [p.id, p]));
+
+  // 선수별 총 출전 쿼터 수 (전 쿼터 배치 합산) + 공평 가이드
+  const quarterCountById = new Map<string, number>();
+  for (const q of QUARTERS) {
+    for (const id of new Set(Object.values(assignByQ[q]))) {
+      quarterCountById.set(id, (quarterCountById.get(id) ?? 0) + 1);
+    }
+  }
+  const qCount = (id: string) => quarterCountById.get(id) ?? 0;
+  const rec = pool.length ? TOTAL_SLOTS / pool.length : 0;
+  const recLo = Math.floor(rec);
+  const recHi = Math.ceil(rec);
+  const avgQ = pool.length ? [...quarterCountById.values()].reduce((a, b) => a + b, 0) / pool.length : 0;
+  const sortedBench = benchSort === "low" ? [...bench].sort((a, b) => qCount(a.id) - qCount(b.id)) : bench;
 
   function onSlotClick(i: number) {
     // 선수를 먼저 고른 상태 → 그 자리에 배치 (기존 선수는 밀려나 벤치로)
@@ -395,8 +420,13 @@ export function MatchFormation({
               >
                 {player ? (
                   <>
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium leading-none text-white shadow-md" style={{ background: POSITION_COLOR[groupOf(slot.label)] }}>
-                      {slot.label}
+                    <span className="relative">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[10px] font-medium leading-none text-white shadow-md" style={{ background: POSITION_COLOR[groupOf(slot.label)] }}>
+                        {slot.label}
+                      </span>
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full border border-white/90 px-1 text-[8px] font-extrabold leading-none text-white" style={{ background: quarterBadgeColor(qCount(pid), recLo, recHi) }}>
+                        {qCount(pid)}Q
+                      </span>
                     </span>
                     <span className="mt-0.5 text-[10px] text-white" style={{ textShadow: "0 1px 2px #000" }}>{player.name}</span>
                   </>
@@ -423,30 +453,52 @@ export function MatchFormation({
 
       {/* 벤치 */}
       <div className="rounded-xl border border-divider bg-card soft-card p-3">
-        <div className="mb-2 text-[12px] text-muted">
-          {pendingPlayer ? (
-            <span className="text-accent">{nameById.get(pendingPlayer)?.name} 선택됨 · 자리를 탭하세요</span>
-          ) : selected !== null ? (
-            <span className="text-red">{slots[selected].label} 자리에 넣을 선수 선택</span>
-          ) : (
-            <>미배정 <span className="text-faint">{bench.length}명</span> · 탭하면 선택</>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="text-[12px] text-muted">
+            {pendingPlayer ? (
+              <span className="text-accent">{nameById.get(pendingPlayer)?.name} 선택됨 · 자리를 탭하세요</span>
+            ) : selected !== null ? (
+              <span className="text-red">{slots[selected].label} 자리에 넣을 선수 선택</span>
+            ) : (
+              <>미배정 <span className="text-faint">{bench.length}명</span> · 탭하면 배치</>
+            )}
+          </div>
+          {bench.length > 0 && pendingPlayer === null && selected === null && (
+            <button
+              onClick={() => setBenchSort((s) => (s === "low" ? "default" : "low"))}
+              className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${benchSort === "low" ? "bg-navy text-white" : "bg-sunken text-muted"}`}
+            >
+              덜 뛴 순
+            </button>
           )}
         </div>
+
+        {bench.length > 0 && (
+          <div className="mb-2.5 rounded-lg bg-sunken px-2.5 py-1.5 text-[11px] text-subtle">
+            평균 <b className="text-accent">{avgQ.toFixed(1)}</b>쿼터 · 참석 {pool.length}명 · 권장 {recLo === recHi ? recLo : `${recLo}~${recHi}`}쿼터 — 적은 사람 먼저
+          </div>
+        )}
+
         {bench.length === 0 ? (
           <div className="py-1 text-center text-[12px] text-faint">전원 배치됨</div>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {bench.map((p) => {
+          <div className="grid grid-cols-2 gap-2">
+            {sortedBench.map((p) => {
               const active = pendingPlayer === p.id;
+              const c = qCount(p.id);
+              const low = !active && c < recLo;
               return (
                 <button
                   key={p.id}
                   onClick={() => fillFromBench(p.id)}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] ${active ? "border-accent bg-tint font-bold text-accent" : "border-line bg-sunken"}`}
+                  style={low ? { borderColor: quarterBadgeColor(c, recLo, recHi) } : undefined}
+                  className={`flex items-center gap-1.5 rounded-[11px] border px-2.5 py-2 text-[13px] ${active ? "border-accent bg-tint font-bold text-accent" : low ? "bg-sunken" : "border-line bg-sunken"}`}
                 >
-                  <Plus size={12} className={active ? "text-accent" : "text-subtle"} />
-                  {p.number != null && <span className={active ? "text-accent" : "text-muted"}>{p.number}</span>}
-                  {p.name}
+                  <Plus size={13} className={active ? "text-accent" : "text-subtle"} />
+                  <span className="min-w-0 flex-1 truncate text-left">{p.name}</span>
+                  <span className="flex h-[18px] min-w-[24px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold text-white" style={{ background: quarterBadgeColor(c, recLo, recHi) }}>
+                    {c}Q
+                  </span>
                 </button>
               );
             })}
