@@ -39,14 +39,15 @@ export async function saveScore(matchId: string, scoreFor: number, scoreAgainst:
   revalidateMatch(matchId);
 }
 
-// 득점 추가
-export async function addGoal(matchId: string, scorerId: string, assistId: string | null) {
+// 득점 추가 (자책골이면 득점자·도움 없이 우리 득점 1)
+export async function addGoal(matchId: string, scorerId: string | null, assistId: string | null, isOwnGoal = false) {
   if (!(await isManager())) return;
   const supabase = await createClient();
   await supabase.from("goals").insert({
     match_id: matchId,
-    scorer_id: scorerId,
-    assist_id: assistId,
+    scorer_id: isOwnGoal ? null : scorerId,
+    assist_id: isOwnGoal ? null : assistId,
+    is_own_goal: isOwnGoal,
   });
   revalidateMatch(matchId);
 }

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Check } from "lucide-react";
 import { saveScore, addGoal } from "@/lib/actions/results";
 import { toast } from "@/lib/toast";
 
@@ -53,37 +53,55 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 export function GoalAdder({ matchId, pool }: { matchId: string; pool: Pool }) {
   const [scorer, setScorer] = useState<string | null>(null);
   const [assist, setAssist] = useState<string | null>(null);
+  const [own, setOwn] = useState(false);
   const [pending, start] = useTransition();
-
-  if (pool.length === 0) {
-    return <div className="rounded-xl border border-divider bg-card soft-card px-4 py-5 text-center text-[12px] text-subtle">참석자가 있어야 득점을 추가할 수 있어요.</div>;
-  }
 
   return (
     <div className="rounded-xl border border-red/40 bg-card soft-card p-3.5">
       <div className="mb-2.5 text-[13px] font-medium">득점 추가</div>
 
-      <div className="mb-1.5 text-[12px] text-muted">득점자</div>
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {pool.map((p) => (
-          <Chip key={p.id} label={p.name} active={scorer === p.id} activeBg="#dc2f3c" onClick={() => setScorer(p.id === scorer ? null : p.id)} />
-        ))}
-      </div>
+      {/* 자책골 토글 */}
+      <button
+        onClick={() => { setOwn((v) => !v); setScorer(null); setAssist(null); }}
+        className={`mb-3 flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] font-medium ${own ? "border-[#e8b98a] bg-[#fbeee0] text-[#a5641a]" : "border-line bg-sunken text-muted"}`}
+      >
+        <span className={`flex h-4 w-4 items-center justify-center rounded-[5px] border ${own ? "border-[#e8912b] bg-[#e8912b]" : "border-line"}`}>
+          {own && <Check size={12} className="text-white" />}
+        </span>
+        자책골 <span className="text-faint">(상대 자책 → 우리 득점)</span>
+      </button>
 
-      <div className="mb-1.5 text-[12px] text-muted">도움 <span className="text-faint">(선택)</span></div>
-      <div className="mb-3.5 flex flex-wrap gap-1.5">
-        <Chip label="없음" active={assist === null} activeBg="#888780" onClick={() => setAssist(null)} />
-        {pool.filter((p) => p.id !== scorer).map((p) => (
-          <Chip key={p.id} label={p.name} active={assist === p.id} activeBg="#185fa5" onClick={() => setAssist(p.id === assist ? null : p.id)} />
-        ))}
-      </div>
+      {!own && (pool.length === 0 ? (
+        <div className="mb-3.5 rounded-lg bg-sunken px-4 py-4 text-center text-[12px] text-subtle">참석자가 있어야 득점자를 고를 수 있어요.</div>
+      ) : (
+        <>
+          <div className="mb-1.5 text-[12px] text-muted">득점자</div>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {pool.map((p) => (
+              <Chip key={p.id} label={p.name} active={scorer === p.id} activeBg="#dc2f3c" onClick={() => setScorer(p.id === scorer ? null : p.id)} />
+            ))}
+          </div>
+
+          <div className="mb-1.5 text-[12px] text-muted">도움 <span className="text-faint">(선택)</span></div>
+          <div className="mb-3.5 flex flex-wrap gap-1.5">
+            <Chip label="없음" active={assist === null} activeBg="#888780" onClick={() => setAssist(null)} />
+            {pool.filter((p) => p.id !== scorer).map((p) => (
+              <Chip key={p.id} label={p.name} active={assist === p.id} activeBg="#185fa5" onClick={() => setAssist(p.id === assist ? null : p.id)} />
+            ))}
+          </div>
+        </>
+      ))}
 
       <button
-        disabled={!scorer || pending}
-        onClick={() => start(async () => { await addGoal(matchId, scorer!, assist); toast("득점이 추가됐어요"); setScorer(null); setAssist(null); })}
+        disabled={pending || (!own && !scorer)}
+        onClick={() => start(async () => {
+          await addGoal(matchId, own ? null : scorer, own ? null : assist, own);
+          toast(own ? "자책골이 추가됐어요" : "득점이 추가됐어요");
+          setScorer(null); setAssist(null); setOwn(false);
+        })}
         className="w-full rounded-lg bg-navy py-2.5 text-[13px] font-medium text-white disabled:opacity-40"
       >
-        <Plus size={15} className="mr-1 inline align-[-2px]" /> 이 득점 추가
+        <Plus size={15} className="mr-1 inline align-[-2px]" /> {own ? "자책골 추가" : "이 득점 추가"}
       </button>
     </div>
   );
