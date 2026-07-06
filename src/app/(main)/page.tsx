@@ -101,8 +101,8 @@ export default async function HomePage() {
         </section>
       ) : (
         <section className="flex items-center gap-3.5 rounded-[20px] border border-dashed bg-card px-[18px] py-4" style={{ borderColor: "var(--sdn-dash)" }}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-tint">
-            <Calendar size={20} className="text-accent" />
+          <span className="flex h-11 w-11 items-center justify-center rounded-[14px]" style={{ background: "color-mix(in srgb, var(--sdn-pink) 20%, transparent)" }}>
+            <Calendar size={20} style={{ color: "var(--sdn-pink)" }} />
           </span>
           <div>
             <div className="text-[14px] font-bold text-fg">예정된 경기가 없어요</div>
@@ -157,7 +157,7 @@ function Pill({ label, value }: { label: string; value: number }) {
 function HeroStat({ value, label, accent }: { value: string | number; label: string; accent?: boolean }) {
   return (
     <div className="flex-1">
-      <div className="text-[19px] font-extrabold tabular-nums" style={{ color: accent ? "var(--sdn-hero-num)" : "#fff" }}>{value}</div>
+      <div className="text-[19px] font-extrabold tabular-nums" style={{ color: accent ? "var(--sdn-pink)" : "#fff" }}>{value}</div>
       <div className="mt-0.5 text-[11px]" style={{ color: "var(--sdn-on-hero-sub)" }}>{label}</div>
     </div>
   );
