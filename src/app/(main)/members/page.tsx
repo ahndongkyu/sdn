@@ -9,8 +9,8 @@ export default async function MembersPage() {
   const role = (profile?.members as { role?: string } | null)?.role;
   const isManager = role === "manager" || role === "admin";
 
-  // 실제 선수는 권한(admin 포함)과 무관하게 모두 노출
-  const roster = members;
+  // 관리 전용 admin 계정은 실제 선수 로스터가 아니므로 목록에서 제외 (운영진·회원은 표시)
+  const roster = members.filter((m) => m.role !== "admin");
 
   return (
     <div className="space-y-4">
