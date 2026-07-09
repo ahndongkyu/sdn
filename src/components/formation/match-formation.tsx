@@ -145,6 +145,7 @@ export function MatchFormation({
       : [...bench].sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
   function onSlotClick(i: number) {
+    if (!isManager) return; // 회원은 보기 전용
     // 선수를 먼저 고른 상태 → 그 자리에 배치 (기존 선수는 밀려나 벤치로)
     if (pendingPlayer) {
       setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [i]: pendingPlayer } }));
@@ -166,6 +167,7 @@ export function MatchFormation({
   }
 
   function fillFromBench(memberId: string) {
+    if (!isManager) return; // 회원은 보기 전용
     // 자리를 먼저 고른 상태 → 그 자리에 배치
     if (selected !== null && !assign[selected]) {
       const slot = selected;
@@ -194,6 +196,7 @@ export function MatchFormation({
   }
 
   function slotPointerDown(e: React.PointerEvent, i: number) {
+    if (!isManager) return; // 회원은 드래그 불가
     if (!assign[i]) return; // 배치된 선수만 드래그
     dragStartRef.current = { x: e.clientX, y: e.clientY, moved: false };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -395,11 +398,13 @@ export function MatchFormation({
       )}
 
       <div className="text-center text-[11px] text-subtle">
-        {pendingPlayer
-          ? `${nameById.get(pendingPlayer)?.name ?? ""} 선수를 넣을 자리를 탭하세요`
-          : selected !== null
-            ? `${slots[selected].label} 자리 · 아래에서 선수를 탭하세요`
-            : "빈 자리·선수를 탭해 배치 · 배치된 선수는 드래그로 위치 교환"}
+        {!isManager
+          ? "라인업 보기 · 쿼터 탭으로 전환"
+          : pendingPlayer
+            ? `${nameById.get(pendingPlayer)?.name ?? ""} 선수를 넣을 자리를 탭하세요`
+            : selected !== null
+              ? `${slots[selected].label} 자리 · 아래에서 선수를 탭하세요`
+              : "빈 자리·선수를 탭해 배치 · 배치된 선수는 드래그로 위치 교환"}
       </div>
 
       {/* 피치 */}
@@ -454,7 +459,8 @@ export function MatchFormation({
         )}
       </div>
 
-      {/* 벤치 */}
+      {/* 벤치 (운영진만 편집) */}
+      {isManager && (
       <div className="rounded-xl border border-divider bg-card soft-card p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="text-[12px] text-muted">
@@ -574,6 +580,7 @@ export function MatchFormation({
           </div>
         )}
       </div>
+      )}
 
       {/* 숨은 캡처 노드 (공유 이미지 생성용) */}
       {captureQs && (
