@@ -8,6 +8,7 @@ import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
 import { formatDateKo, dday, regionLabel } from "@/lib/format";
 import { NextMatchActions } from "@/components/match/next-match-actions";
+import { AttendanceLists } from "@/components/match/attendance-lists";
 import { VideoButton } from "@/components/match/video-button";
 import { PlaceCopy } from "@/components/match/place-copy";
 import { BellButton } from "@/components/layout/bell-button";
@@ -29,7 +30,8 @@ export default async function HomePage() {
     next ? getMatchAttendances(next.id) : Promise.resolve([]),
     next ? getFormation(next.id) : Promise.resolve(null),
   ]);
-  const goingCount = nextAtt.filter((a) => a.status === "going").length;
+  const goingNames = nextAtt.filter((a) => a.status === "going" && a.members).map((a) => a.members!.name);
+  const notGoingNames = nextAtt.filter((a) => a.status === "notGoing" && a.members).map((a) => a.members!.name);
   const hasLineup = !!nextFormation;
   const diff = team.gf - team.ga;
 
@@ -95,9 +97,7 @@ export default async function HomePage() {
             ) : null}
           </div>
           <NextMatchActions matchId={next.id} current={myStatus} hasLineup={hasLineup} />
-          <div className="mt-2.5 text-center text-[11px] text-subtle">
-            현재 <span className="font-bold text-accent">{goingCount}명</span> 참석
-          </div>
+          <AttendanceLists going={goingNames} notGoing={notGoingNames} />
         </section>
       ) : (
         <section className="flex items-center gap-3.5 rounded-[20px] border border-dashed bg-card px-[18px] py-4" style={{ borderColor: "var(--sdn-dash)" }}>
