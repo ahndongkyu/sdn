@@ -172,8 +172,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Link>
         <Link
           href={`/matches/${id}/comment`}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] ${talkActive ? "border border-accent font-bold text-accent" : "border border-line text-muted"}`}
-          style={talkActive ? { boxShadow: "0 0 0 1px var(--sdn-accent), 0 3px 12px -3px color-mix(in srgb, var(--sdn-accent) 55%, transparent)" } : undefined}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] ${talkActive ? "talk-glow border border-accent font-bold text-accent" : "border border-line text-muted"}`}
         >
           <MessageCircle size={15} /> 코멘트{talkActive && talkCount.comments > 0 ? ` ${talkCount.comments}` : ""}
         </Link>
