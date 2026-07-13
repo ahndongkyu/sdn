@@ -35,29 +35,42 @@ export function ParticipantVoteGrid({
 
   return (
     <div>
-      {/* MOM 투표 박스 (진행중이면 글로우) */}
-      {vote && (
-        <div className={`mb-3 flex items-center gap-3 rounded-2xl px-4 py-3 ${inProgress ? "mom-glow border border-[#efbf6a] bg-[#fff8ee]" : "border border-divider bg-sunken"}`}>
-          <Trophy size={22} className={inProgress ? "text-[#e8912b]" : "text-muted"} />
+      {/* MOM 투표 박스 */}
+      {vote && (inProgress ? (
+        <div className="mom-glow mb-3 flex items-center gap-3 rounded-2xl border border-[#efbf6a] bg-[#fff8ee] px-4 py-3">
+          <Trophy size={22} className="text-[#e8912b]" />
           <div className="min-w-0 flex-1">
-            <div className={`flex items-center gap-1.5 text-[14px] font-extrabold ${inProgress ? "text-[#7a4f0c]" : "text-fg"}`}>
-              {inProgress ? "MOM 투표" : "MOM 투표 마감"}
-              {inProgress && <span className="h-[7px] w-[7px] rounded-full bg-[#e8912b]" style={{ boxShadow: "0 0 0 3px rgba(232,145,43,.2)" }} />}
+            <div className="flex items-center gap-1.5 text-[14px] font-extrabold text-[#7a4f0c]">
+              MOM 투표 <span className="h-[7px] w-[7px] rounded-full bg-[#e8912b]" style={{ boxShadow: "0 0 0 3px rgba(232,145,43,.2)" }} />
             </div>
-            <div className={`mt-0.5 truncate text-[11px] ${inProgress ? "text-[#a5793a]" : "text-subtle"}`}>
-              {inProgress
-                ? `${vote.deadlineLabel ? `${vote.deadlineLabel} 마감 · ` : ""}${votingOpen ? "탭해서 투표" : "참석자만 투표"}`
-                : winnerNames.length
-                  ? `오늘의 MOM · ${winnerNames.join(", ")}`
-                  : "투표 없이 마감"}
+            <div className="mt-0.5 truncate text-[11px] text-[#a5793a]">
+              {vote.deadlineLabel ? `${vote.deadlineLabel} 마감 · ` : ""}{votingOpen ? "탭해서 투표" : "참석자만 투표"}
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <div className={`text-[22px] font-extrabold leading-none tabular-nums ${inProgress ? "text-[#e8912b]" : "text-fg"}`}>{vote.total}</div>
-            <div className="mt-0.5 text-[10px] text-subtle">{inProgress ? "현재 표" : "총 표"}</div>
+            <div className="text-[22px] font-extrabold leading-none tabular-nums text-[#e8912b]">{vote.total}</div>
+            <div className="mt-0.5 text-[10px] text-subtle">현재 표</div>
           </div>
         </div>
-      )}
+      ) : winnerNames.length ? (
+        <div className="mb-3 flex items-center gap-3.5 rounded-2xl border border-[#efbf6a] px-4 py-3.5" style={{ background: "linear-gradient(135deg,#fff6e6,#fffdf8)" }}>
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ef9f27] text-white"><Trophy size={22} /></div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10.5px] font-extrabold tracking-wide text-[#a5641a]">오늘의 MOM</div>
+            <div className="truncate text-[19px] font-extrabold leading-tight text-[#7a4f0c]">{winnerNames.join(", ")}</div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className="text-[18px] font-extrabold leading-none tabular-nums text-[#a5641a]">{maxCount}</div>
+            <div className="mt-0.5 text-[10px] text-[#b58a4a]">표 · 총 {vote.total}</div>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-3 flex items-center gap-3 rounded-2xl border border-divider bg-sunken px-4 py-3">
+          <Trophy size={22} className="text-muted" />
+          <div className="flex-1 text-[13px] font-bold text-muted">MOM 투표 마감 · 투표 없이 마감</div>
+          <div className="text-[13px] text-subtle">{vote.total}표</div>
+        </div>
+      ))}
 
       <div className="grid grid-cols-2 gap-2">
         {participants.map((p) => {

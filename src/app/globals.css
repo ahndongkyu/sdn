@@ -261,11 +261,11 @@ body {
   .talk-glow { animation: none; box-shadow: 0 0 0 1px var(--sdn-blue); }
 }
 /* MOM 투표 진행중 — 금색 글로우 */
-@keyframes mom-glow {
-  0%, 100% { box-shadow: 0 0 0 1px #ef9f27, 0 0 3px 0 rgba(239, 159, 39, 0.35); }
-  50% { box-shadow: 0 0 0 1px #ef9f27, 0 0 16px 2px rgba(239, 159, 39, 0.6); }
+@keyframes mom-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px #ef9f27, 0 0 4px 0 rgba(239, 159, 39, 0.4); }
+  50% { box-shadow: 0 0 0 1px #ef9f27, 0 0 18px 3px rgba(239, 159, 39, 0.7); }
 }
-.mom-glow { animation: mom-glow 1.9s ease-in-out infinite; }
+.mom-glow { animation: mom-pulse 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .mom-glow { animation: none; box-shadow: 0 0 0 1px #ef9f27; }
 }
