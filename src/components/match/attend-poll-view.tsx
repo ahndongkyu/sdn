@@ -21,7 +21,8 @@ const OPTS: { v: Status; label: string; color: string }[] = [
 export function AttendPollView({
   matchId,
   title,
-  subtitle,
+  dateLine,
+  place,
   groups,
   myStatus: initialMyStatus,
   comments,
@@ -29,7 +30,8 @@ export function AttendPollView({
 }: {
   matchId: string;
   title: string;
-  subtitle: string;
+  dateLine: string;
+  place: string;
   groups: { going: Person[]; notGoing: Person[]; undecided: Person[]; noResponse: Person[] };
   myStatus: Status | null;
   comments: AttendComment[];
@@ -72,9 +74,10 @@ export function AttendPollView({
         <div className="mb-3 flex items-center gap-1.5 rounded-lg bg-[#fff8ee] px-2.5 py-1.5 text-[11px] font-medium text-[#a5793a]" style={{ border: "1px solid #f0dcae" }}>
           <Clock size={12} /> 경기 시작 전까지 투표할 수 있어요
         </div>
-        <div className="mb-3.5 text-[15px] font-extrabold leading-snug">
-          {title}
-          <span className="mt-0.5 block text-[12px] font-medium text-subtle">{subtitle}</span>
+        <div className="mb-3.5">
+          <div className="text-[15px] font-extrabold">{title}</div>
+          <div className="mt-1 text-[12.5px] text-muted">{dateLine}</div>
+          {place && <div className="text-[12.5px] text-muted">{place}</div>}
         </div>
 
         <div className="space-y-2">
@@ -188,8 +191,8 @@ function AttendModal({ groups, onClose }: { groups: { going: Person[]; notGoing:
                     <div className="grid grid-cols-4 gap-x-1.5 gap-y-3">
                       {g.list.map((p, i) => (
                         <div key={i} className="flex flex-col items-center">
-                          <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full border-[2.5px] bg-card" style={{ borderColor: POSITION_COLOR[p.position1 as Position] ?? "#889" }}>
-                            <span className="text-[12px] font-extrabold tracking-tight text-fg">{p.name}</span>
+                          <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full border-2 bg-card" style={{ borderColor: POSITION_COLOR[p.position1 as Position] ?? "#889" }}>
+                            <span className="text-[10.5px] font-extrabold tracking-tight text-fg">{p.name}</span>
                           </div>
                         </div>
                       ))}
