@@ -266,6 +266,9 @@ body {
   50% { box-shadow: 0 0 0 1px #ef9f27, 0 0 18px 3px rgba(239, 159, 39, 0.7); }
 }
 .mom-glow { animation: mom-pulse 1.8s ease-in-out infinite; }
+/* 스크롤바 숨김 (초성 인덱스용) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { width: 0; height: 0; display: none; }
 @media (prefers-reduced-motion: reduce) {
   .mom-glow { animation: none; box-shadow: 0 0 0 1px #ef9f27; }
 }
