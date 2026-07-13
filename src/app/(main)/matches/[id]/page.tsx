@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
+import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle, ChevronRight } from "lucide-react";
 import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
@@ -140,9 +140,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <section className="rounded-2xl border border-divider bg-card soft-card p-3.5">
           <div className="mb-2.5 text-[13px] text-muted">참석 체크</div>
           <RsvpButtons matchId={id} current={myStatus} />
-          <div className="mt-2.5 text-center text-[11px] text-muted">
-            참석 <span className="font-medium text-[#1d9e75]">{counts.going}</span> · 불참 {counts.notGoing} · 미정 {counts.undecided}
-          </div>
+          <Link href={`/matches/${id}/attend`} className="mt-2.5 flex items-center justify-center gap-1 rounded-lg border border-line py-2 text-[12px] font-bold text-muted">
+            참석 현황 <span className="font-normal text-subtle">· 투표·댓글</span> <ChevronRight size={13} />
+          </Link>
         </section>
       )}
 

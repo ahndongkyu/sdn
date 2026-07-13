@@ -1,14 +1,13 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
-import { getMatches, getMatchAttendances, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
+import { getMatches, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
 import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
 import { formatDateKo, dday, regionLabel } from "@/lib/format";
 import { NextMatchActions } from "@/components/match/next-match-actions";
-import { AttendanceLists } from "@/components/match/attendance-lists";
 import { VideoButton } from "@/components/match/video-button";
 import { PlaceCopy } from "@/components/match/place-copy";
 import { BellButton } from "@/components/layout/bell-button";
@@ -25,13 +24,10 @@ export default async function HomePage() {
   const last = matches.filter(isPast)[0] ?? null;
 
   // 날씨는 외부 API라 Suspense로 분리 스트리밍 (홈 렌더를 막지 않음)
-  const [myStatus, nextAtt, nextFormation] = await Promise.all([
+  const [myStatus, nextFormation] = await Promise.all([
     next && myMemberId ? getMyAttendance(next.id, myMemberId) : Promise.resolve("undecided" as const),
-    next ? getMatchAttendances(next.id) : Promise.resolve([]),
     next ? getFormation(next.id) : Promise.resolve(null),
   ]);
-  const goingNames = nextAtt.filter((a) => a.status === "going" && a.members).map((a) => a.members!.name);
-  const notGoingNames = nextAtt.filter((a) => a.status === "notGoing" && a.members).map((a) => a.members!.name);
   const hasLineup = !!nextFormation;
   const diff = team.gf - team.ga;
 
@@ -103,7 +99,6 @@ export default async function HomePage() {
             </div>
           )}
           <NextMatchActions matchId={next.id} current={myStatus} hasLineup={hasLineup} />
-          <AttendanceLists going={goingNames} notGoing={notGoingNames} />
         </section>
       ) : (
         <section className="flex items-center gap-3.5 rounded-[20px] border border-dashed bg-card px-[18px] py-4" style={{ borderColor: "var(--sdn-dash)" }}>
