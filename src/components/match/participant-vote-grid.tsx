@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { CircleCheck, Crown } from "lucide-react";
+import { CircleCheck, Crown, Trophy } from "lucide-react";
 import { voteMvp } from "@/lib/actions/votes";
 import { toast } from "@/lib/toast";
 import { Avatar } from "@/components/ui/avatar";
@@ -29,21 +29,33 @@ export function ParticipantVoteGrid({
 }) {
   const [pending, start] = useTransition();
   const votingOpen = !!vote && !vote.closed && vote.canVote;
+  const inProgress = !!vote && !vote.closed;
   const maxCount = vote?.closed ? participants.reduce((m, p) => Math.max(m, vote.counts[p.id] ?? 0), 0) : 0;
+  const winnerNames = vote?.closed && maxCount > 0 ? participants.filter((p) => (vote.counts[p.id] ?? 0) === maxCount).map((p) => p.name) : [];
 
   return (
     <div>
-      {/* MOM 투표 상태 줄 */}
+      {/* MOM 투표 박스 (진행중이면 글로우) */}
       {vote && (
-        <div className="mb-2 flex items-center justify-between rounded-lg bg-[#ef9f27]/10 px-3 py-1.5 text-[11.5px] font-bold text-[#a5641a]">
-          <span className="flex items-center gap-1"><Crown size={13} /> MOM 투표</span>
-          <span>
-            {vote.closed
-              ? `마감 · ${vote.total}표`
-              : votingOpen
-                ? `${vote.deadlineLabel ? `${vote.deadlineLabel} 마감 · ` : ""}탭해서 투표`
-                : "참석자만 투표 가능"}
-          </span>
+        <div className={`mb-3 flex items-center gap-3 rounded-2xl px-4 py-3 ${inProgress ? "mom-glow border border-[#efbf6a] bg-[#fff8ee]" : "border border-divider bg-sunken"}`}>
+          <Trophy size={22} className={inProgress ? "text-[#e8912b]" : "text-muted"} />
+          <div className="min-w-0 flex-1">
+            <div className={`flex items-center gap-1.5 text-[14px] font-extrabold ${inProgress ? "text-[#7a4f0c]" : "text-fg"}`}>
+              {inProgress ? "MOM 투표" : "MOM 투표 마감"}
+              {inProgress && <span className="h-[7px] w-[7px] rounded-full bg-[#e8912b]" style={{ boxShadow: "0 0 0 3px rgba(232,145,43,.2)" }} />}
+            </div>
+            <div className={`mt-0.5 truncate text-[11px] ${inProgress ? "text-[#a5793a]" : "text-subtle"}`}>
+              {inProgress
+                ? `${vote.deadlineLabel ? `${vote.deadlineLabel} 마감 · ` : ""}${votingOpen ? "탭해서 투표" : "참석자만 투표"}`
+                : winnerNames.length
+                  ? `오늘의 MOM · ${winnerNames.join(", ")}`
+                  : "투표 없이 마감"}
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <div className={`text-[22px] font-extrabold leading-none tabular-nums ${inProgress ? "text-[#e8912b]" : "text-fg"}`}>{vote.total}</div>
+            <div className="mt-0.5 text-[10px] text-subtle">{inProgress ? "현재 표" : "총 표"}</div>
+          </div>
         </div>
       )}
 
@@ -91,9 +103,6 @@ export function ParticipantVoteGrid({
         ))}
       </div>
 
-      {vote && !vote.closed && !vote.canVote && (
-        <div className="mt-2 text-center text-[11px] text-subtle">이 경기 참석자만 MOM 투표할 수 있어요</div>
-      )}
     </div>
   );
 }

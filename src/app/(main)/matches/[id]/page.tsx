@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, Shirt, Crown, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
+import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
 import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
@@ -61,18 +61,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const scorers = [...scorerMap.values()].sort((a, b) => b.count - a.count);
   const ownGoals = goals.filter((g) => g.is_own_goal).length;
 
-  // MOM 투표 상태: 결과 입력됨 + 마감시각 기준
+  // MOM 투표 마감 여부 (결과 입력됨 + 마감시각 지남). 결과·승자는 참가선수 박스에서 표시.
   const hasResult = match.score_for !== null;
   const voteClosed = hasResult && (!match.mom_vote_close || Date.now() >= new Date(match.mom_vote_close).getTime());
-  // 최다 득표자 (마감 후 확정용)
-  let topId: string | null = null;
-  let topCount = 0;
-  for (const [tid, c] of Object.entries(votes.counts)) {
-    if (c > topCount) { topCount = c; topId = tid; }
-  }
-  // 오늘의 MOM = 마감 후 최다 득표자 (순수 투표)
-  const momId = voteClosed && topCount > 0 ? topId : null;
-  const mvpName = momId ? nameOf.get(momId) : null;
 
   return (
     <div className="space-y-4">
@@ -176,17 +167,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           <MessageCircle size={15} /> 코멘트{talkActive && talkCount.comments > 0 ? ` ${talkCount.comments}` : ""}
         </Link>
       </div>
-
-      {/* MVP */}
-      {mvpName && (
-        <div className="flex items-center gap-3 rounded-xl bg-navy px-3.5 py-3 text-white">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ef9f27] text-[13px] font-medium text-[#412402]">{mvpName.slice(0, 2)}</div>
-          <div className="flex-1">
-            <div className="text-[11px] text-[#fac775]"><Crown size={13} className="mr-1 inline align-[-2px]" /> 오늘의 MOM</div>
-            <div className="text-sm font-medium">{mvpName}</div>
-          </div>
-        </div>
-      )}
 
       {/* 참가 선수 (+ MOM 투표) */}
       <div>

@@ -260,6 +260,15 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .talk-glow { animation: none; box-shadow: 0 0 0 1px var(--sdn-blue); }
 }
+/* MOM 투표 진행중 — 금색 글로우 */
+@keyframes mom-glow {
+  0%, 100% { box-shadow: 0 0 0 1px #ef9f27, 0 0 3px 0 rgba(239, 159, 39, 0.35); }
+  50% { box-shadow: 0 0 0 1px #ef9f27, 0 0 16px 2px rgba(239, 159, 39, 0.6); }
+}
+.mom-glow { animation: mom-glow 1.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mom-glow { animation: none; box-shadow: 0 0 0 1px #ef9f27; }
+}
 /* 프로필 카드 그라데이션 (더보기) */
 .profile-card {
   position: relative;
