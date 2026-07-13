@@ -33,3 +33,10 @@ export const isManager = cache(async () => {
   const role = (profile?.members as { role?: string } | null)?.role;
   return role === "manager" || role === "admin";
 });
+
+// 현재 사용자가 관리자(admin)인지
+export const isAdmin = cache(async () => {
+  const profile = await getMyProfile();
+  const role = (profile?.members as { role?: string } | null)?.role;
+  return role === "admin";
+});

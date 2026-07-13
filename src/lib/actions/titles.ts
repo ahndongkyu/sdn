@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isManager } from "@/lib/data/auth";
+import { isAdmin } from "@/lib/data/auth";
 
 export async function addManagerTitle(label: string) {
-  if (!(await isManager())) return;
+  if (!(await isAdmin())) return;
   const l = label.trim();
   if (!l) return;
   const supabase = await createClient();
@@ -14,7 +14,7 @@ export async function addManagerTitle(label: string) {
 }
 
 export async function removeManagerTitle(id: string) {
-  if (!(await isManager())) return;
+  if (!(await isAdmin())) return;
   const supabase = await createClient();
   const { data: t } = await supabase.from("manager_titles").select("label").eq("id", id).maybeSingle();
   await supabase.from("manager_titles").delete().eq("id", id);
@@ -24,7 +24,7 @@ export async function removeManagerTitle(id: string) {
 }
 
 export async function setMemberTitle(memberId: string, title: string | null) {
-  if (!(await isManager())) return;
+  if (!(await isAdmin())) return;
   const supabase = await createClient();
   await supabase.from("members").update({ title: title || null }).eq("id", memberId);
   revalidatePath("/settings");
