@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, Shirt, Crown, CircleCheck, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
+import { ArrowLeft, Play, Shirt, Crown, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
 import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
@@ -10,8 +10,7 @@ import { formatDateKo } from "@/lib/format";
 import { POSITION_BADGE } from "@/lib/mock";
 import { RsvpButtons } from "@/components/match/rsvp-buttons";
 import { VideoButton } from "@/components/match/video-button";
-import { MvpVote } from "@/components/match/mvp-vote";
-import { Avatar } from "@/components/ui/avatar";
+import { ParticipantVoteGrid } from "@/components/match/participant-vote-grid";
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -189,21 +188,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </div>
       )}
 
-      {/* MVP 투표 (결과 입력 = 경기 종료 시 오픈) */}
-      {match.score_for !== null && (
-        <MvpVote
-          matchId={id}
-          pool={going.map((a) => ({ id: a.members!.id, name: a.members!.name }))}
-          counts={votes.counts}
-          myVote={votes.myVote}
-          total={votes.total}
-          canVote={myStatus === "going" && !voteClosed}
-          closed={voteClosed}
-          deadline={match.mom_vote_close}
-        />
-      )}
-
-      {/* 참가 선수 */}
+      {/* 참가 선수 (+ MOM 투표) */}
       <div>
         <div className="mb-2.5 flex items-center justify-between">
           <h2 className="text-[13px] text-muted">참가 선수</h2>
@@ -218,35 +203,28 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         {going.length === 0 && guests.length === 0 ? (
           <div className="rounded-xl border border-divider bg-card soft-card px-4 py-6 text-center text-[13px] text-subtle">아직 참석자가 없어요.</div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {going.map((a, i) => {
-              const m = a.members;
-              const badge = m ? POSITION_BADGE[m.position1] : POSITION_BADGE.MF;
-              const num = m?.member_numbers?.find((n) => n.uniform === match.uniform)?.number ?? m?.member_numbers?.[0]?.number;
-              return (
-                <div key={i} className="flex items-center gap-2 rounded-[10px] border border-divider bg-card px-2.5 py-2">
-                  {num != null ? (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-medium" style={{ background: badge.bg, color: badge.fg }}>
-                      {num}
-                    </div>
-                  ) : (
-                    <Avatar size={28} />
-                  )}
-                  <span className="flex-1 text-[13px]">{m?.name ?? "게스트"}</span>
-                  <CircleCheck size={16} className="text-[#1d9e75]" />
-                </div>
-              );
+          <ParticipantVoteGrid
+            matchId={id}
+            participants={going.filter((a) => a.members).map((a) => {
+              const m = a.members!;
+              const badge = POSITION_BADGE[m.position1];
+              const num = m.member_numbers?.find((n) => n.uniform === match.uniform)?.number ?? m.member_numbers?.[0]?.number ?? null;
+              return { id: m.id, name: m.name, number: num, badgeBg: badge.bg, badgeFg: badge.fg };
             })}
-            {guests.map((g) => {
-              return (
-                <div key={g.id} className="flex items-center gap-2 rounded-[10px] border border-dashed border-line bg-card px-2.5 py-2">
-                  <Avatar size={28} guest />
-                  <span className="flex-1 text-[13px]">{g.name} <span className="text-[10px] text-faint">용병</span></span>
-                  <CircleCheck size={16} className="text-[#1d9e75]" />
-                </div>
-              );
-            })}
-          </div>
+            guests={guests.map((g) => ({ id: g.id, name: g.name }))}
+            vote={
+              match.score_for !== null
+                ? {
+                    closed: voteClosed,
+                    canVote: myStatus === "going" && !voteClosed,
+                    myVote: votes.myVote,
+                    counts: votes.counts,
+                    total: votes.total,
+                    deadlineLabel: match.mom_vote_close ? new Date(match.mom_vote_close).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : null,
+                  }
+                : null
+            }
+          />
         )}
       </div>
     </div>
