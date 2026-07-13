@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Play, Shirt, Crown, CircleCheck, Pencil, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Play, Shirt, Crown, CircleCheck, Pencil, Calendar, MapPin, MessageCircle } from "lucide-react";
 import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
+import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
 import { getGuests } from "@/lib/data/guests";
 import { getMyProfile } from "@/lib/data/auth";
@@ -29,6 +30,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const myStatus = myMemberId ? await getMyAttendance(id, myMemberId) : "undecided";
   const votes = await getMvpVotes(id, myMemberId);
   const guests = await getGuests(id);
+  const talkCount = await getMatchTalkCount(id);
 
   const nameOf = new Map(members.map((m) => [m.id, m.name]));
   const past = isPast(match);
@@ -168,6 +170,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           <Shirt size={17} /> 포메이션
         </Link>
       </div>
+
+      {/* 경기 코멘트 진입 */}
+      <Link href={`/matches/${id}/comment`} className="flex items-center justify-center gap-1.5 rounded-lg border border-line bg-card py-2.5 text-[13px] font-medium soft-card">
+        <MessageCircle size={16} className="text-accent" /> 경기 코멘트
+        {(talkCount.hasPost || talkCount.comments > 0) && (
+          <span className="rounded-full bg-tint px-2 py-0.5 text-[11px] font-bold text-accent">{talkCount.hasPost ? "총평 · " : ""}댓글 {talkCount.comments}</span>
+        )}
+      </Link>
 
       {/* MVP */}
       {mvpName && (
