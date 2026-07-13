@@ -253,12 +253,12 @@ body {
 }
 /* 코멘트 활성 — 은은하게 숨쉬는 글로우 */
 @keyframes talk-pulse {
-  0%, 100% { box-shadow: 0 0 0 1px var(--sdn-accent), 0 0 0 0 color-mix(in srgb, var(--sdn-accent) 30%, transparent); }
-  50% { box-shadow: 0 0 0 1px var(--sdn-accent), 0 0 13px 1px color-mix(in srgb, var(--sdn-accent) 60%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 1px var(--sdn-blue), 0 0 2px 0 color-mix(in srgb, var(--sdn-blue) 35%, transparent); }
+  50% { box-shadow: 0 0 0 1px var(--sdn-blue), 0 0 14px 2px color-mix(in srgb, var(--sdn-blue) 65%, transparent); }
 }
-.talk-glow { animation: talk-pulse 1.9s ease-in-out infinite; }
+.talk-glow { animation: talk-pulse 1.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .talk-glow { animation: none; box-shadow: 0 0 0 1px var(--sdn-accent); }
+  .talk-glow { animation: none; box-shadow: 0 0 0 1px var(--sdn-blue); }
 }
 /* 프로필 카드 그라데이션 (더보기) */
 .profile-card {
