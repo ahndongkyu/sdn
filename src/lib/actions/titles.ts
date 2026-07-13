@@ -10,7 +10,7 @@ export async function addManagerTitle(label: string) {
   if (!l) return;
   const supabase = await createClient();
   await supabase.from("manager_titles").insert({ label: l });
-  revalidatePath("/settings");
+  revalidatePath("/admin/managers");
 }
 
 export async function removeManagerTitle(id: string) {
@@ -19,7 +19,7 @@ export async function removeManagerTitle(id: string) {
   const { data: t } = await supabase.from("manager_titles").select("label").eq("id", id).maybeSingle();
   await supabase.from("manager_titles").delete().eq("id", id);
   if (t?.label) await supabase.from("members").update({ title: null }).eq("title", t.label);
-  revalidatePath("/settings");
+  revalidatePath("/admin/managers");
   revalidatePath("/members");
 }
 
@@ -27,7 +27,7 @@ export async function setMemberTitle(memberId: string, title: string | null) {
   if (!(await isAdmin())) return;
   const supabase = await createClient();
   await supabase.from("members").update({ title: title || null }).eq("id", memberId);
-  revalidatePath("/settings");
+  revalidatePath("/admin/managers");
   revalidatePath("/members");
   revalidatePath(`/members/${memberId}`);
 }

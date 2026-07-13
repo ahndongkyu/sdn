@@ -15,6 +15,7 @@ export default async function MorePage() {
     | { id: string; name: string; role: string; position1?: string }
     | null;
   const isManager = member?.role === "manager" || member?.role === "admin";
+  const isAdmin = member?.role === "admin";
   const [members, pendingCount] = await Promise.all([getMembers(), isManager ? getPendingCount() : Promise.resolve(0)]);
 
   return (
@@ -55,8 +56,9 @@ export default async function MorePage() {
           <div className="overflow-hidden rounded-xl border border-red/40 bg-card soft-card">
             <Row icon={<UserCheck size={19} className="text-red" />} label="가입 승인" href="/admin/approvals" right={pendingCount > 0 ? `${pendingCount}명 대기` : undefined} dot={pendingCount > 0} />
             <Row icon={<CalendarPlus size={19} className="text-red" />} label="매치 관리" href="/matches" />
-            <Row icon={<UserPlus size={19} className="text-red" />} label="회원 등록" href="/admin/members/new" />
-            <Row icon={<Settings size={19} className="text-red" />} label="팀 설정 (유니폼·시즌)" href="/admin/team" last />
+            <Row icon={<UserPlus size={19} className="text-red" />} label="회원 관리" href="/admin/members" />
+            <Row icon={<Settings size={19} className="text-red" />} label="팀 설정 (유니폼·시즌)" href="/admin/team" last={!isAdmin} />
+            {isAdmin && <Row icon={<Shield size={19} className="text-red" />} label="운영진 관리" href="/admin/managers" last />}
           </div>
         </div>
       )}

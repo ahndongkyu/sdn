@@ -1,19 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { PushToggle } from "@/components/push/push-toggle";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
-import { ManagerTitles } from "@/components/settings/manager-titles";
-import { isAdmin } from "@/lib/data/auth";
-import { getManagerTitles } from "@/lib/data/titles";
-import { getMembers } from "@/lib/data/members";
 
-export default async function SettingsPage() {
-  const admin = await isAdmin();
-  const [titles, members] = admin ? await Promise.all([getManagerTitles(), getMembers()]) : [[], []];
-  const managers = members
-    .filter((m) => m.role === "manager" || m.role === "admin")
-    .map((m) => ({ id: m.id, name: m.name, position1: m.position1, title: m.title }));
-
+export default function SettingsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -36,15 +26,6 @@ export default async function SettingsPage() {
           <PushToggle />
         </div>
       </div>
-
-      {admin && (
-        <div>
-          <div className="mb-2 ml-1 flex items-center gap-1 text-xs text-subtle">
-            <Shield size={12} /> 운영진 역할 <span className="text-faint">(관리자 · 표시용 직책)</span>
-          </div>
-          <ManagerTitles titles={titles} managers={managers} />
-        </div>
-      )}
     </div>
   );
 }
