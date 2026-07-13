@@ -49,16 +49,16 @@ export function MemberList({ members }: { members: MemberRow[] }) {
                 {list.map((m, i) => (
                   <Link key={m.id} href={`/members/${m.id}`} className={`flex items-center gap-3 px-3.5 py-3 ${i < list.length - 1 ? "border-b border-divider" : ""}`}>
                     <Avatar size={34} />
-                    <div className="flex-1">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 text-sm">
-                        {m.name}
-                        {m.role !== "member" && <span className="rounded-lg bg-red px-1.5 py-px text-[10px] text-white">{m.title ?? "운영진"}</span>}
+                        <span className="truncate">{m.name}</span>
+                        {m.role !== "member" && <span className="shrink-0 rounded-lg bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white">{m.title ?? "운영진"}</span>}
                       </div>
                       <div className="text-[11px] text-subtle">
                         {m.position2 ? `${m.position2} · ${DETAIL_POSITION_LABEL[m.position2] ?? ""}`.replace(/ · $/, "") : "상세 포지션 미설정"}
                       </div>
                     </div>
-                    <span className="rounded-[10px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{m.position1}</span>
+                    <span className="shrink-0 rounded-[10px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{m.position1}</span>
                   </Link>
                 ))}
               </div>

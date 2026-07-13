@@ -12,7 +12,7 @@ import { Avatar } from "@/components/ui/avatar";
 export default async function MorePage() {
   const profile = await getMyProfile();
   const member = (profile?.members ?? null) as
-    | { id: string; name: string; role: string; position1?: string }
+    | { id: string; name: string; role: string; position1?: string; title?: string | null }
     | null;
   const isManager = member?.role === "manager" || member?.role === "admin";
   const isAdmin = member?.role === "admin";
@@ -36,7 +36,7 @@ export default async function MorePage() {
             {member ? `${member.position1} · SDN` : "프로필 미연결"}
           </div>
         </div>
-        {isManager && <span className="rounded-xl bg-red px-2.5 py-0.5 text-[11px] text-white">운영진</span>}
+        {isManager && <span className="rounded-xl bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">{member?.title ?? "운영진"}</span>}
       </Link>
 
       {/* 일반 메뉴 */}

@@ -44,7 +44,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
         <div className="text-[17px] font-medium">{m.name}</div>
         {m.nickname && <div className="text-xs text-navy-muted">@{m.nickname}</div>}
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
-          {m.role !== "member" && <span className="rounded-xl bg-red px-2.5 py-0.5 text-[11px]">운영진{m.title ? ` · ${m.title}` : ""}</span>}
+          {m.role !== "member" && <span className="rounded-xl bg-accent px-2.5 py-0.5 text-[11px] font-bold">운영진{m.title ? ` · ${m.title}` : ""}</span>}
           <span className="rounded-xl px-2.5 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>
             {m.position1} {POSITION_LABEL[m.position1]}
           </span>

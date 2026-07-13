@@ -16,6 +16,7 @@ export type TalkComment = {
   authorName: string;
   position1: string;
   isManagerAuthor: boolean;
+  title: string | null;
   likes: number;
   likedByMe: boolean;
   replies: TalkComment[];
@@ -33,7 +34,7 @@ type Row = {
   parent_id: string | null;
   created_at: string;
   author_id: string;
-  members: { name: string; position1: string; role: string } | null;
+  members: { name: string; position1: string; role: string; title: string | null } | null;
 };
 
 export async function getMatchTalk(matchId: string, myMemberId: string | null): Promise<MatchTalk> {
@@ -42,7 +43,7 @@ export async function getMatchTalk(matchId: string, myMemberId: string | null): 
     supabase.from("match_comments").select("id, body, created_at").eq("match_id", matchId).maybeSingle(),
     supabase
       .from("comments")
-      .select("id, body, parent_id, created_at, author_id, members(name, position1, role)")
+      .select("id, body, parent_id, created_at, author_id, members(name, position1, role, title)")
       .eq("match_id", matchId)
       .order("created_at", { ascending: true }),
   ]);
@@ -72,6 +73,7 @@ export async function getMatchTalk(matchId: string, myMemberId: string | null): 
     authorName: r.members?.name ?? "회원",
     position1: r.members?.position1 ?? "MF",
     isManagerAuthor: r.members?.role === "manager" || r.members?.role === "admin",
+    title: r.members?.title ?? null,
     likes: likeCount.get(r.id) ?? 0,
     likedByMe: likedByMe.has(r.id),
     replies: [],

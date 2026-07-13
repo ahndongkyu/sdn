@@ -85,10 +85,10 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
                   return (
                     <Link key={m.id} href={`/members/${m.id}/edit`} className="flex items-center gap-2.5 border-b border-divider px-3.5 py-2.5 last:border-b-0">
                       <span className="shrink-0 rounded-[8px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{m.position1}</span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                        {m.name}
-                        {m.role !== "member" && <span className="ml-1.5 rounded bg-red px-1.5 py-px text-[9px] text-white">{m.title ?? "운영진"}</span>}
-                      </span>
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[13px] font-medium">
+                        <span className="truncate">{m.name}</span>
+                        {m.role !== "member" && <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold text-white">{m.title ?? "운영진"}</span>}
+                      </div>
                       <Pencil size={14} className="shrink-0 text-faint" />
                     </Link>
                   );

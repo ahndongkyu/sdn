@@ -53,7 +53,7 @@ export function TalkView({
             <div className="brand-logo flex h-9 w-9 items-center justify-center rounded-[11px] text-[9px] font-bold">SDN</div>
             <div className="flex-1">
               <div className="flex items-center gap-1.5 text-[13px] font-bold">
-                운영진 <span className="rounded-[6px] bg-red px-1.5 py-px text-[9px] font-bold text-white">공식</span>
+                운영진 <span className="rounded-[6px] bg-accent px-1.5 py-px text-[9px] font-bold text-white">공식</span>
               </div>
               <div className="text-[10.5px] text-subtle">{formatDateKo(talk.post.createdAt.slice(0, 10)).short} · 경기 총평</div>
             </div>
@@ -158,7 +158,7 @@ function CommentItem({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1 text-[12.5px] font-bold">
           {c.authorName}
-          {c.isManagerAuthor && <span className="rounded-[5px] bg-red px-1 py-px text-[8px] font-bold text-white">운영진</span>}
+          {c.isManagerAuthor && <span className="rounded-[5px] bg-accent px-1 py-px text-[8px] font-bold text-white">{c.title ?? "운영진"}</span>}
         </div>
         <div className="mt-0.5 whitespace-pre-line text-[13px] leading-snug text-fg">{c.body}</div>
         <div className="mt-1.5 flex items-center gap-3.5 text-[10.5px] text-subtle">

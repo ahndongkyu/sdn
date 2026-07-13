@@ -120,7 +120,10 @@ export function AttendPollView({
               <div key={c.id} className="flex gap-2.5">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: POSITION_COLOR[c.position1 as Position] ?? "#889" }}>{c.authorName.slice(0, 1)}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-bold">{c.authorName}</div>
+                  <div className="flex items-center gap-1.5 text-[12.5px] font-bold">
+                    {c.authorName}
+                    {c.isManagerAuthor && <span className="rounded-[5px] bg-accent px-1 py-px text-[8px] font-bold text-white">{c.title ?? "운영진"}</span>}
+                  </div>
                   <div className="mt-0.5 whitespace-pre-line text-[13px] leading-snug text-fg">{c.body}</div>
                   <div className="mt-1 flex items-center gap-3 text-[10.5px] text-subtle">
                     <span>{timeago(c.createdAt)}</span>
