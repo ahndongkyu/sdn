@@ -4,6 +4,10 @@ export type PendingProfile = {
   id: string;
   kakao_nickname: string | null;
   claimed_name: string | null;
+  claimed_position1: string | null;
+  claimed_position2: string | null;
+  claimed_num_red: number | null;
+  claimed_num_blue: number | null;
   email: string | null;
   created_at: string;
 };
@@ -13,7 +17,7 @@ export async function getPendingProfiles(): Promise<PendingProfile[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, kakao_nickname, claimed_name, email, created_at")
+    .select("id, kakao_nickname, claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue, email, created_at")
     .is("member_id", null)
     .order("created_at");
   return (data ?? []) as PendingProfile[];

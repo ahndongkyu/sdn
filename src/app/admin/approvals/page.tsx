@@ -25,7 +25,7 @@ export default async function ApprovalsPage() {
       </div>
 
       <p className="text-[11px] leading-relaxed text-muted">
-        본인 이름을 입력한 사람은 로스터와 <span className="font-medium text-accent">자동 매칭</span>돼요. 확인 후 연결만 눌러주세요.
+        이름이 명단과 같으면 <span className="font-medium text-accent">자동 매칭</span>돼요. 명단에 없으면 신청 정보로 <span className="font-medium text-red">새 회원 등록</span>도 가능해요.
       </p>
 
       {pending.length === 0 ? (

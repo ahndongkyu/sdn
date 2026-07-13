@@ -20,7 +20,7 @@ export const getMyProfile = cache(async () => {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, email, kakao_nickname, claimed_name, member_id, members(*)")
+    .select("id, email, kakao_nickname, claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue, member_id, members(*)")
     .eq("id", user.id)
     .maybeSingle();
 
