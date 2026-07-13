@@ -31,6 +31,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const votes = await getMvpVotes(id, myMemberId);
   const guests = await getGuests(id);
   const talkCount = await getMatchTalkCount(id);
+  const talkActive = talkCount.hasPost || talkCount.comments > 0;
 
   const nameOf = new Map(members.map((m) => [m.id, m.name]));
   const past = isPast(match);
@@ -155,29 +156,28 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </section>
       )}
 
-      {/* 액션 */}
+      {/* 액션 — 영상 · 포메이션 · 코멘트 */}
       <div className="flex gap-2">
         {match.youtube_url ? (
           <VideoButton url={match.youtube_url} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink py-2.5 text-[13px] font-medium text-white">
-            <Play size={16} className="text-red" fill="currentColor" /> 영상
+            <Play size={15} className="text-red" fill="currentColor" /> 영상
           </VideoButton>
         ) : (
           <span className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-sunken py-2.5 text-[13px] text-faint">
-            <Play size={16} /> 영상 없음
+            <Play size={15} /> 영상
           </span>
         )}
         <Link href={`/matches/${id}/formation`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line py-2.5 text-[13px]">
-          <Shirt size={17} /> 포메이션
+          <Shirt size={16} /> 포메이션
+        </Link>
+        <Link
+          href={`/matches/${id}/comment`}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] ${talkActive ? "border border-accent font-bold text-accent" : "border border-line text-muted"}`}
+          style={talkActive ? { boxShadow: "0 0 0 1px var(--sdn-accent), 0 3px 12px -3px color-mix(in srgb, var(--sdn-accent) 55%, transparent)" } : undefined}
+        >
+          <MessageCircle size={15} /> 코멘트{talkActive && talkCount.comments > 0 ? ` ${talkCount.comments}` : ""}
         </Link>
       </div>
-
-      {/* 경기 코멘트 진입 */}
-      <Link href={`/matches/${id}/comment`} className="flex items-center justify-center gap-1.5 rounded-lg border border-line bg-card py-2.5 text-[13px] font-medium soft-card">
-        <MessageCircle size={16} className="text-accent" /> 경기 코멘트
-        {(talkCount.hasPost || talkCount.comments > 0) && (
-          <span className="rounded-full bg-tint px-2 py-0.5 text-[11px] font-bold text-accent">{talkCount.hasPost ? "총평 · " : ""}댓글 {talkCount.comments}</span>
-        )}
-      </Link>
 
       {/* MVP */}
       {mvpName && (
