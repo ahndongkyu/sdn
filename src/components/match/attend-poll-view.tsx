@@ -188,12 +188,10 @@ function AttendModal({ groups, onClose }: { groups: { going: Person[]; notGoing:
                   g.list.length === 0 ? (
                     <div className="pb-1 text-[12px] text-faint">없어요</div>
                   ) : (
-                    <div className="grid grid-cols-4 gap-x-1.5 gap-y-3">
+                    <div className="grid grid-cols-4 gap-1.5">
                       {g.list.map((p, i) => (
-                        <div key={i} className="flex flex-col items-center">
-                          <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full border-2 bg-card" style={{ borderColor: POSITION_COLOR[p.position1 as Position] ?? "#889" }}>
-                            <span className="text-[10.5px] font-extrabold tracking-tight text-fg">{p.name}</span>
-                          </div>
+                        <div key={i} className="truncate rounded-full border-[1.5px] bg-card py-1.5 text-center text-[12px] font-bold text-fg" style={{ borderColor: POSITION_COLOR[p.position1 as Position] ?? "#889" }}>
+                          {p.name}
                         </div>
                       ))}
                     </div>
