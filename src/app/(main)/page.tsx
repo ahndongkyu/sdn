@@ -82,20 +82,26 @@ export default async function HomePage() {
             <span className="text-[12.5px] font-bold text-subtle">다음 경기</span>
             <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white btn-glow">{dday(next.match_date)}</span>
           </div>
-          <div className="mb-3 flex items-center justify-center gap-4">
-            <Crest label="우리팀" badge="SDN" />
-            <span className="text-[15px] text-muted">VS</span>
-            <Crest label={next.opponent} badge={next.opponent.slice(0, 2)} opp />
-          </div>
-          <div className="mb-3.5 text-center text-[13px] text-muted">
-            <Calendar size={14} className="mr-1 inline align-[-2px] text-subtle" />
-            {formatDateKo(next.match_date).full} {next.match_time ?? ""}
-            {next.place_address ? (
-              <div className="mt-1 flex justify-center"><PlaceCopy place={next.place ?? next.place_address} address={next.place_address} /></div>
-            ) : next.place ? (
-              <div className="mt-1"><MapPin size={14} className="mr-1 inline align-[-2px] text-subtle" /> {next.place}</div>
-            ) : null}
-          </div>
+          <Link href={`/matches/${next.id}`} className={`block ${next.place_address || next.place ? "" : "mb-3.5"}`}>
+            <div className="mb-3 flex items-center justify-center gap-4">
+              <Crest label="우리팀" badge="SDN" />
+              <span className="text-[15px] text-muted">VS</span>
+              <Crest label={next.opponent} badge={next.opponent.slice(0, 2)} opp />
+            </div>
+            <div className="text-center text-[13px] text-muted">
+              <Calendar size={14} className="mr-1 inline align-[-2px] text-subtle" />
+              {formatDateKo(next.match_date).full} {next.match_time ?? ""}
+            </div>
+          </Link>
+          {(next.place_address || next.place) && (
+            <div className="mb-3.5 mt-1.5 text-center text-[13px] text-muted">
+              {next.place_address ? (
+                <div className="flex justify-center"><PlaceCopy place={next.place ?? next.place_address} address={next.place_address} /></div>
+              ) : (
+                <div><MapPin size={14} className="mr-1 inline align-[-2px] text-subtle" /> {next.place}</div>
+              )}
+            </div>
+          )}
           <NextMatchActions matchId={next.id} current={myStatus} hasLineup={hasLineup} />
           <AttendanceLists going={goingNames} notGoing={notGoingNames} />
         </section>
