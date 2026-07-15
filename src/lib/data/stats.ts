@@ -15,6 +15,17 @@ export type MemberStat = {
   mvp: number;
 };
 
+function todayInSeoul() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
 export async function getMemberStats(season: number = currentSeason()): Promise<MemberStat[]> {
   const supabase = await createClient();
   const [membersRes, goalsRes, attRes, matchesRes, votesRes] = await Promise.all([
@@ -27,9 +38,12 @@ export async function getMemberStats(season: number = currentSeason()): Promise<
 
   const members = membersRes.data ?? [];
   const matches = matchesRes.data ?? [];
-  // 해당 시즌(연도) 경기 id 집합
+  const today = todayInSeoul();
+  // 해당 시즌(연도) 중 오늘까지 진행된 경기 id 집합 — 예정 경기는 출전/출석률에서 제외
   const inSeason = new Set(
-    matches.filter((m) => new Date(m.match_date + "T00:00:00").getFullYear() === season).map((m) => m.id),
+    matches
+      .filter((m) => Number(m.match_date.slice(0, 4)) === season && m.match_date <= today)
+      .map((m) => m.id),
   );
   const goals = (goalsRes.data ?? []).filter((g) => inSeason.has(g.match_id));
   const att = (attRes.data ?? []).filter((a) => inSeason.has(a.match_id));

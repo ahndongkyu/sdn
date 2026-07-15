@@ -235,6 +235,55 @@ body {
   background: var(--sdn-hero-glow);
   pointer-events: none;
 }
+/* 다음 경기 — 밝은 블루 글로우 카드 */
+.next-match-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--sdn-blue) 30%, var(--sdn-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--sdn-blue-tint) 62%, var(--sdn-surface)), var(--sdn-surface) 74%);
+  box-shadow:
+    0 20px 42px -24px color-mix(in srgb, var(--sdn-blue) 70%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--sdn-blue) 8%, transparent);
+  animation: next-match-pulse 3.4s ease-in-out infinite;
+}
+.next-match-card::before {
+  content: "";
+  position: absolute;
+  top: -82px;
+  right: -58px;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--sdn-blue) 24%, transparent), transparent 68%);
+  pointer-events: none;
+}
+.next-match-card::after {
+  content: "";
+  position: absolute;
+  inset: auto 24px 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--sdn-blue) 55%, transparent), transparent);
+  pointer-events: none;
+}
+.next-match-card > * { position: relative; z-index: 1; }
+@keyframes next-match-pulse {
+  0%, 100% {
+    box-shadow:
+      0 17px 37px -24px color-mix(in srgb, var(--sdn-blue) 47%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--sdn-blue) 7%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 20px 44px -22px color-mix(in srgb, var(--sdn-blue) 70%, transparent),
+      0 0 19px -5px color-mix(in srgb, var(--sdn-blue) 43%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--sdn-blue) 19%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .next-match-card { animation: none; }
+}
 /* 브랜드 로고 — 블루→네이비 그라데이션 + 글로우 */
 .brand-logo {
   background: linear-gradient(150deg, var(--sdn-blue), #14213d);
