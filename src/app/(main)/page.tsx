@@ -132,10 +132,14 @@ export default async function HomePage() {
             <Crest label={last.opponent} badge={last.opponent.slice(0, 2)} opp small />
           </div>
           <div className="flex gap-2">
-            {last.youtube_url && (
-              <VideoButton url={last.youtube_url} className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
-                <Play size={15} fill="currentColor" /> 경기 영상
+            {last.youtube_url ? (
+              <VideoButton url={last.youtube_url} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink py-2.5 text-[13px] font-medium text-white">
+                <Play size={15} className="text-red" fill="currentColor" /> 경기 영상
               </VideoButton>
+            ) : (
+              <span className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-sunken py-2.5 text-[13px] text-faint" aria-disabled="true">
+                <Play size={15} /> 영상 준비중
+              </span>
             )}
             <Link href={`/matches/${last.id}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-tint py-3 text-[13px] font-bold text-accent">
               <ClipboardList size={15} /> 경기 기록
