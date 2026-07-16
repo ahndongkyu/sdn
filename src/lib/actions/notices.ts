@@ -6,11 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyProfile, isManager } from "@/lib/data/auth";
 import { sendPushToAll } from "@/lib/push";
 import { recordNotificationEvent } from "@/lib/notification-events";
+import { noticePlainText, sanitizeNoticeContent } from "@/lib/notice-content";
 
 export async function createNotice(formData: FormData) {
   if (!(await isManager())) return;
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
+  const content = sanitizeNoticeContent(String(formData.get("content") ?? ""));
+  if (!noticePlainText(content)) return;
   const profile = await getMyProfile();
 
   const supabase = await createClient();
@@ -18,7 +21,7 @@ export async function createNotice(formData: FormData) {
     .from("notices")
     .insert({
       title,
-      content: String(formData.get("content") ?? "") || null,
+      content,
       author_id: (profile?.member_id as string | null) ?? null,
     })
     .select("id")

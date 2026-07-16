@@ -284,6 +284,52 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .next-match-card { animation: none; }
 }
+/* 공지 목록 최신 카드 */
+.notice-featured {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--sdn-border-blue);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--sdn-blue-tint) 58%, var(--sdn-surface)), var(--sdn-surface) 76%);
+  box-shadow: var(--sdn-shadow-lg);
+}
+.notice-featured::before,
+.notice-detail-header::before {
+  content: "";
+  position: absolute;
+  right: -46px;
+  top: -54px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--sdn-blue) 18%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.notice-detail-header { position: relative; overflow: hidden; background: color-mix(in srgb, var(--sdn-blue-tint) 42%, var(--sdn-surface)); }
+.notice-detail-header > * { position: relative; z-index: 1; }
+/* 공지 리치 텍스트 편집기/본문 */
+.notice-editor:empty::before { content: attr(data-placeholder); color: var(--sdn-faint); pointer-events: none; }
+.notice-editor h2,
+.notice-content h2 { margin: 1.25rem 0 0.55rem; font-size: 1.25rem; line-height: 1.5; font-weight: 700; color: var(--sdn-ink); }
+.notice-editor h3,
+.notice-content h3 { margin: 1rem 0 0.45rem; font-size: 1.05rem; line-height: 1.55; font-weight: 700; color: var(--sdn-ink); }
+.notice-editor p,
+.notice-content p { margin: 0.7rem 0; }
+.notice-editor ul,
+.notice-editor ol,
+.notice-content ul,
+.notice-content ol { margin: 0.8rem 0; padding-left: 1.4rem; }
+.notice-editor ul,
+.notice-content ul { list-style: disc; }
+.notice-editor ol,
+.notice-content ol { list-style: decimal; }
+.notice-editor blockquote,
+.notice-content blockquote { margin: 1rem 0; border-left: 3px solid var(--sdn-blue); background: var(--sdn-blue-tint); padding: 0.7rem 0.9rem; color: var(--sdn-text); }
+.notice-editor strong,
+.notice-editor b,
+.notice-content strong,
+.notice-content b { font-weight: 700; color: var(--sdn-ink); }
+.notice-content { min-height: 120px; font-size: 14px; line-height: 1.9; color: var(--sdn-text); overflow-wrap: anywhere; }
 /* 브랜드 로고 — 블루→네이비 그라데이션 + 글로우 */
 .brand-logo {
   background: linear-gradient(150deg, var(--sdn-blue), #14213d);
