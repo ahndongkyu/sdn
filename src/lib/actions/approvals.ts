@@ -23,6 +23,7 @@ export async function submitClaimName(formData: FormData) {
     claimed_num_red: toNum(formData.get("num_red")),
     claimed_num_blue: toNum(formData.get("num_blue")),
   }).eq("id", user.id);
+  await supabase.rpc("record_signup_notification");
   // 운영진·관리자에게 가입 신청 알림 푸시
   await sendPushToManagers({
     title: "SDN · 새 가입 신청",
@@ -31,6 +32,8 @@ export async function submitClaimName(formData: FormData) {
   });
   revalidatePath("/pending");
   revalidatePath("/admin/approvals");
+  revalidatePath("/notifications");
+  revalidatePath("/");
 }
 
 // 승인(신규): 신청 정보로 새 회원 생성 + 계정 연결

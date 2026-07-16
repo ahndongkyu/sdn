@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyProfile, isManager } from "@/lib/data/auth";
 import { sendPushToAll } from "@/lib/push";
+import { recordNotificationEvent } from "@/lib/notification-events";
 
 // 매치 등록 (운영진 — RLS의 is_manager()로 강제)
 export async function createMatch(formData: FormData) {
@@ -14,34 +15,51 @@ export async function createMatch(formData: FormData) {
   if (!opponent || !match_date) return;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("matches").insert({
-    opponent,
-    match_date,
-    match_time: String(formData.get("match_time") ?? "") || null,
-    place: String(formData.get("place") ?? "") || null,
-    place_address: String(formData.get("place_address") ?? "") || null,
-    place_lat: formData.get("place_lat") ? Number(formData.get("place_lat")) : null,
-    place_lng: formData.get("place_lng") ? Number(formData.get("place_lng")) : null,
-    type: String(formData.get("type") ?? "match"),
-    uniform: String(formData.get("uniform") ?? "") || null,
-    youtube_url: String(formData.get("youtube_url") ?? "") || null,
-    status: "upcoming",
-  });
+  const matchTime = String(formData.get("match_time") ?? "");
+  const matchType = String(formData.get("type") ?? "match");
+  const { data: match, error } = await supabase
+    .from("matches")
+    .insert({
+      opponent,
+      match_date,
+      match_time: matchTime || null,
+      place: String(formData.get("place") ?? "") || null,
+      place_address: String(formData.get("place_address") ?? "") || null,
+      place_lat: formData.get("place_lat") ? Number(formData.get("place_lat")) : null,
+      place_lng: formData.get("place_lng") ? Number(formData.get("place_lng")) : null,
+      type: matchType,
+      uniform: String(formData.get("uniform") ?? "") || null,
+      youtube_url: String(formData.get("youtube_url") ?? "") || null,
+      status: "upcoming",
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !match) {
     console.error("createMatch", error);
     return;
   }
 
+  const label = matchType === "self" ? opponent : `vs ${opponent}`;
+  const body = `${match_date}${matchTime ? ` · ${matchTime}` : ""} · 참석 여부를 알려주세요`;
+  await recordNotificationEvent(supabase, {
+    kind: "match",
+    referenceId: match.id,
+    title: `${label} 경기가 등록됐어요`,
+    body,
+    url: `/matches/${match.id}`,
+    audience: "all",
+  });
+
   try {
-    const label = String(formData.get("type") ?? "match") === "self" ? opponent : `vs ${opponent}`;
-    const time = String(formData.get("match_time") ?? "");
-    await sendPushToAll({ title: "새 경기 등록", body: `${label} · ${match_date} ${time} · 참석 체크하세요`, url: "/matches" });
+    await sendPushToAll({ title: "새 경기 등록", body: `${label} · ${body}`, url: `/matches/${match.id}` });
   } catch {
     /* 푸시 실패 무시 */
   }
 
   revalidatePath("/matches");
+  revalidatePath("/notifications");
+  revalidatePath("/");
   redirect(`/matches?toast=${encodeURIComponent("경기가 등록됐어요")}`);
 }
 
@@ -83,7 +101,9 @@ export async function deleteMatch(formData: FormData) {
   if (!id) return;
   const supabase = await createClient();
   await supabase.from("matches").delete().eq("id", id);
+  await supabase.from("notification_events").delete().eq("reference_id", id);
   revalidatePath("/matches");
+  revalidatePath("/notifications");
   revalidatePath("/");
   redirect(`/matches?toast=${encodeURIComponent("경기가 삭제됐어요")}`);
 }

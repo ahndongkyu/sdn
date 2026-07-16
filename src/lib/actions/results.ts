@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/data/auth";
-import { sendPushToAll } from "@/lib/push";
+import { sendPushToMembers } from "@/lib/push";
+import { recordNotificationEvent } from "@/lib/notification-events";
 
 function revalidateMatch(matchId: string) {
   revalidatePath(`/admin/matches/${matchId}/result`);
@@ -19,23 +20,40 @@ export async function saveScore(matchId: string, scoreFor: number, scoreAgainst:
   const supabase = await createClient();
 
   // MOM 투표 마감시각: 첫 결과 입력 시점 + 1시간 (이미 있으면 유지)
-  const { data: cur } = await supabase.from("matches").select("mom_vote_close").eq("id", matchId).single();
+  const [{ data: cur }, { data: match }, { data: attendances }] = await Promise.all([
+    supabase.from("matches").select("mom_vote_close").eq("id", matchId).single(),
+    supabase.from("matches").select("opponent, type").eq("id", matchId).single(),
+    supabase.from("attendances").select("member_id").eq("match_id", matchId).eq("status", "going"),
+  ]);
   const update: Record<string, unknown> = { score_for: scoreFor, score_against: scoreAgainst, status: "past" };
   if (!cur?.mom_vote_close) update.mom_vote_close = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
   await supabase.from("matches").update(update).eq("id", matchId);
 
+  const memberIds = (attendances ?? []).map((attendance) => attendance.member_id as string).filter(Boolean);
+  const label = match?.type === "self" ? match.opponent : `vs ${match?.opponent ?? ""}`;
+  const body = `${scoreFor} : ${scoreAgainst} · MOM 투표에 참여해주세요`;
+  await recordNotificationEvent(supabase, {
+    kind: "result",
+    referenceId: matchId,
+    title: `${label} 경기 결과`,
+    body,
+    url: `/matches/${matchId}`,
+    audience: "members",
+    memberIds,
+  });
+
   try {
-    const { data: m } = await supabase.from("matches").select("opponent").eq("id", matchId).single();
-    await sendPushToAll({
+    await sendPushToMembers(memberIds, {
       title: "경기 결과",
-      body: `vs ${m?.opponent ?? ""} ${scoreFor} : ${scoreAgainst} · MOM 투표하세요`,
+      body: `${label} ${body}`,
       url: `/matches/${matchId}`,
     });
   } catch {
     /* 푸시 실패 무시 */
   }
 
+  revalidatePath("/notifications");
   revalidateMatch(matchId);
 }
 

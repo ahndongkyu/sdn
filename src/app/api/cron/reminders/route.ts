@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendToSubscriptions } from "@/lib/push";
+import { recordNotificationEvent } from "@/lib/notification-events";
 
 // D-1 경기 리마인드. Vercel Cron이 매일 호출 (Authorization: Bearer CRON_SECRET).
 export async function GET(request: Request) {
@@ -31,12 +33,24 @@ export async function GET(request: Request) {
 
   for (const m of matches) {
     const label = m.type === "self" ? m.opponent : `vs ${m.opponent}`;
+    const body = `${label}${m.match_time ? ` · ${m.match_time}` : ""} · 아직 참석 전이라면 알려주세요`;
+    await recordNotificationEvent(admin, {
+      kind: "reminder",
+      referenceId: m.id,
+      title: "내일 경기",
+      body,
+      url: `/matches/${m.id}`,
+      audience: "all",
+    });
     await sendToSubscriptions(list, {
       title: "내일 경기",
-      body: `${label} ${m.match_time ?? ""} · 아직 참석 안 했으면 체크하세요`,
+      body,
       url: `/matches/${m.id}`,
     });
   }
+
+  revalidatePath("/notifications");
+  revalidatePath("/");
 
   return NextResponse.json({ tomorrow, matches: matches.length, sent: list.length });
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyProfile, isManager } from "@/lib/data/auth";
 import { sendPushToAll } from "@/lib/push";
+import { recordNotificationEvent } from "@/lib/notification-events";
 
 export async function createNotice(formData: FormData) {
   if (!(await isManager())) return;
@@ -13,19 +14,38 @@ export async function createNotice(formData: FormData) {
   const profile = await getMyProfile();
 
   const supabase = await createClient();
-  await supabase.from("notices").insert({
+  const { data: notice, error } = await supabase
+    .from("notices")
+    .insert({
+      title,
+      content: String(formData.get("content") ?? "") || null,
+      author_id: (profile?.member_id as string | null) ?? null,
+    })
+    .select("id")
+    .single();
+  if (error || !notice) {
+    console.error("createNotice", error);
+    return;
+  }
+
+  await recordNotificationEvent(supabase, {
+    kind: "notice",
+    referenceId: notice.id,
     title,
-    content: String(formData.get("content") ?? "") || null,
-    author_id: (profile?.member_id as string | null) ?? null,
+    body: "새 공지가 등록됐어요",
+    url: `/notices/${notice.id}`,
+    audience: "all",
   });
 
   try {
-    await sendPushToAll({ title: "새 공지", body: title, url: "/notices" });
+    await sendPushToAll({ title: "새 공지", body: title, url: `/notices/${notice.id}` });
   } catch {
     /* 푸시 실패는 무시 */
   }
 
   revalidatePath("/notices");
+  revalidatePath("/notifications");
+  revalidatePath("/");
   redirect(`/notices?toast=${encodeURIComponent("공지가 등록됐어요")}`);
 }
 
@@ -35,6 +55,9 @@ export async function deleteNotice(formData: FormData) {
   if (!id) return;
   const supabase = await createClient();
   await supabase.from("notices").delete().eq("id", id);
+  await supabase.from("notification_events").delete().eq("kind", "notice").eq("reference_id", id);
   revalidatePath("/notices");
+  revalidatePath("/notifications");
+  revalidatePath("/");
   redirect(`/notices?toast=${encodeURIComponent("공지가 삭제됐어요")}`);
 }
