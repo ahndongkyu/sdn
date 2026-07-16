@@ -284,16 +284,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .next-match-card { animation: none; }
 }
-/* 공지 목록 최신 카드 */
-.notice-featured {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid var(--sdn-border-blue);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--sdn-blue-tint) 58%, var(--sdn-surface)), var(--sdn-surface) 76%);
-  box-shadow: var(--sdn-shadow-lg);
-}
-.notice-featured::before,
 .notice-detail-header::before {
   content: "";
   position: absolute;

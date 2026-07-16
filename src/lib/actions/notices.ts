@@ -52,6 +52,55 @@ export async function createNotice(formData: FormData) {
   redirect(`/notices?toast=${encodeURIComponent("공지가 등록됐어요")}`);
 }
 
+export async function updateNotice(formData: FormData) {
+  if (!(await isManager())) return;
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const content = sanitizeNoticeContent(String(formData.get("content") ?? ""));
+  if (!id || !title || !noticePlainText(content)) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("notices")
+    .update({ title, content })
+    .eq("id", id);
+  if (error) return;
+
+  await supabase
+    .from("notification_events")
+    .update({ title })
+    .eq("kind", "notice")
+    .eq("reference_id", id);
+
+  revalidatePath(`/notices/${id}`);
+  revalidatePath("/notices");
+  revalidatePath("/notifications");
+  revalidatePath("/");
+  redirect(`/notices/${id}?toast=${encodeURIComponent("공지가 수정됐어요")}`);
+}
+
+export async function trackNoticeView(noticeId: string) {
+  const profile = await getMyProfile();
+  if (!profile?.member_id || !noticeId) return null;
+
+  const supabase = await createClient();
+  await supabase
+    .from("notice_views")
+    .upsert(
+      { notice_id: noticeId, member_id: profile.member_id },
+      { onConflict: "notice_id,member_id", ignoreDuplicates: true },
+    );
+
+  const { data } = await supabase
+    .from("notices")
+    .select("view_count")
+    .eq("id", noticeId)
+    .maybeSingle();
+
+  revalidatePath("/notices");
+  return typeof data?.view_count === "number" ? data.view_count : null;
+}
+
 export async function deleteNotice(formData: FormData) {
   if (!(await isManager())) return;
   const id = String(formData.get("id") ?? "");

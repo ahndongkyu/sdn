@@ -5,11 +5,11 @@ import { Bold, List, ListOrdered, Quote, Redo2, Undo2 } from "lucide-react";
 
 type Command = "bold" | "insertUnorderedList" | "insertOrderedList" | "formatBlock" | "undo" | "redo";
 
-export function NoticeEditor() {
+export function NoticeEditor({ initialContent = "", initialCharacters = 0 }: { initialContent?: string; initialCharacters?: number }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const selectionRef = useRef<Range | null>(null);
-  const [content, setContent] = useState("");
-  const [characters, setCharacters] = useState(0);
+  const [content, setContent] = useState(initialContent);
+  const [characters, setCharacters] = useState(initialCharacters);
 
   function rememberSelection() {
     const editor = editorRef.current;
@@ -83,6 +83,7 @@ export function NoticeEditor() {
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
+        dangerouslySetInnerHTML={{ __html: initialContent }}
         role="textbox"
         aria-multiline="true"
         aria-label="공지 내용"
