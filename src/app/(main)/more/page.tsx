@@ -8,6 +8,7 @@ import { getMembers } from "@/lib/data/members";
 import { getPendingCount } from "@/lib/data/approvals";
 import { signOut } from "@/lib/actions/auth";
 import { Avatar } from "@/components/ui/avatar";
+import { appVersion } from "@/lib/app-version";
 
 export default async function MorePage() {
   const profile = await getMyProfile();
@@ -73,6 +74,11 @@ export default async function MorePage() {
           </button>
         </form>
       </div>
+
+      <footer className="select-none pt-0.5 text-center" aria-label={`앱 버전 ${appVersion}`}>
+        <div className="text-[10px] font-bold tracking-[0.16em] text-faint">SDN FC</div>
+        <div className="mt-0.5 text-[9.5px] tracking-[0.08em] text-subtle">APP VERSION {appVersion}</div>
+      </footer>
     </div>
   );
 }

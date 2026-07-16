@@ -1,12 +1,13 @@
 {
   "name": "sdn",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "version:next": "pnpm version minor --no-git-tag-version --no-git-checks"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
