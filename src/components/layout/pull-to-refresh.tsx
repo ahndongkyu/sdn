@@ -94,7 +94,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
           />
         </span>
       </div>
-      <div style={{ transform: `translateY(${offset}px)`, transition: anim }}>{children}</div>
+      <div style={{ transform: offset === 0 ? "none" : `translateY(${offset}px)`, transition: anim }}>{children}</div>
     </>
   );
 }
