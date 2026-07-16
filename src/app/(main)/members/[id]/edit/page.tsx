@@ -35,14 +35,6 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
 
         <PositionSelect position1={m.position1} position2={m.position2 ?? undefined} />
 
-        <Field label="주발">
-          <select name="foot" defaultValue={m.foot} className="input">
-            <option value="R">오른발</option>
-            <option value="L">왼발</option>
-            <option value="both">양발</option>
-          </select>
-        </Field>
-
         <Field label="유니폼별 등번호">
           <div className="flex flex-col gap-2">
             <NumberRow uniform="빨검" color="#dc2f3c" defaultValue={num("빨검")} />

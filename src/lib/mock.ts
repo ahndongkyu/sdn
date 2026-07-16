@@ -43,7 +43,6 @@ export type Member = {
   nickname?: string;
   position1: Position;
   position2?: Position;
-  foot: "L" | "R" | "both";
   role: Role;
   numbers: { uniform: string; number: number }[];
   stats: {
@@ -56,17 +55,17 @@ export type Member = {
 };
 
 export const members: Member[] = [
-  { id: "m1", name: "신윙어", nickname: "shin", position1: "FW", position2: "MF", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 9 }, { uniform: "흰파", number: 14 }], stats: { games: 18, goals: 14, assists: 3, mvp: 4, attendRate: 90 } },
-  { id: "m2", name: "조스트", position1: "FW", foot: "L", role: "manager", numbers: [{ uniform: "빨검", number: 11 }, { uniform: "흰파", number: 7 }], stats: { games: 17, goals: 9, assists: 5, mvp: 2, attendRate: 85 } },
-  { id: "m3", name: "강박스", position1: "MF", position2: "FW", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 6 }, { uniform: "흰파", number: 6 }], stats: { games: 19, goals: 7, assists: 8, mvp: 1, attendRate: 95 } },
-  { id: "m4", name: "윤윙어", position1: "FW", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 17 }, { uniform: "흰파", number: 17 }], stats: { games: 15, goals: 6, assists: 4, mvp: 0, attendRate: 75 } },
-  { id: "m5", name: "오플메", position1: "MF", foot: "L", role: "member", numbers: [{ uniform: "빨검", number: 8 }, { uniform: "흰파", number: 10 }], stats: { games: 18, goals: 4, assists: 9, mvp: 1, attendRate: 90 } },
-  { id: "m6", name: "한미드", position1: "MF", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 16 }, { uniform: "흰파", number: 16 }], stats: { games: 16, goals: 2, assists: 6, mvp: 0, attendRate: 80 } },
-  { id: "m7", name: "정풀백", position1: "DF", foot: "R", role: "manager", numbers: [{ uniform: "빨검", number: 2 }, { uniform: "흰파", number: 2 }], stats: { games: 18, goals: 3, assists: 5, mvp: 2, attendRate: 90 } },
-  { id: "m8", name: "이수비", position1: "DF", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 4 }, { uniform: "흰파", number: 4 }], stats: { games: 17, goals: 1, assists: 2, mvp: 0, attendRate: 85 } },
-  { id: "m9", name: "박중앙", position1: "DF", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 5 }, { uniform: "흰파", number: 5 }], stats: { games: 14, goals: 0, assists: 1, mvp: 0, attendRate: 70 } },
-  { id: "m10", name: "최센터", position1: "DF", foot: "L", role: "member", numbers: [{ uniform: "빨검", number: 3 }, { uniform: "흰파", number: 3 }], stats: { games: 16, goals: 1, assists: 0, mvp: 0, attendRate: 80 } },
-  { id: "m11", name: "김골키", position1: "GK", foot: "R", role: "member", numbers: [{ uniform: "빨검", number: 1 }, { uniform: "흰파", number: 1 }], stats: { games: 18, goals: 0, assists: 0, mvp: 1, attendRate: 90 } },
+  { id: "m1", name: "신윙어", nickname: "shin", position1: "FW", position2: "MF", role: "member", numbers: [{ uniform: "빨검", number: 9 }, { uniform: "흰파", number: 14 }], stats: { games: 18, goals: 14, assists: 3, mvp: 4, attendRate: 90 } },
+  { id: "m2", name: "조스트", position1: "FW", role: "manager", numbers: [{ uniform: "빨검", number: 11 }, { uniform: "흰파", number: 7 }], stats: { games: 17, goals: 9, assists: 5, mvp: 2, attendRate: 85 } },
+  { id: "m3", name: "강박스", position1: "MF", position2: "FW", role: "member", numbers: [{ uniform: "빨검", number: 6 }, { uniform: "흰파", number: 6 }], stats: { games: 19, goals: 7, assists: 8, mvp: 1, attendRate: 95 } },
+  { id: "m4", name: "윤윙어", position1: "FW", role: "member", numbers: [{ uniform: "빨검", number: 17 }, { uniform: "흰파", number: 17 }], stats: { games: 15, goals: 6, assists: 4, mvp: 0, attendRate: 75 } },
+  { id: "m5", name: "오플메", position1: "MF", role: "member", numbers: [{ uniform: "빨검", number: 8 }, { uniform: "흰파", number: 10 }], stats: { games: 18, goals: 4, assists: 9, mvp: 1, attendRate: 90 } },
+  { id: "m6", name: "한미드", position1: "MF", role: "member", numbers: [{ uniform: "빨검", number: 16 }, { uniform: "흰파", number: 16 }], stats: { games: 16, goals: 2, assists: 6, mvp: 0, attendRate: 80 } },
+  { id: "m7", name: "정풀백", position1: "DF", role: "manager", numbers: [{ uniform: "빨검", number: 2 }, { uniform: "흰파", number: 2 }], stats: { games: 18, goals: 3, assists: 5, mvp: 2, attendRate: 90 } },
+  { id: "m8", name: "이수비", position1: "DF", role: "member", numbers: [{ uniform: "빨검", number: 4 }, { uniform: "흰파", number: 4 }], stats: { games: 17, goals: 1, assists: 2, mvp: 0, attendRate: 85 } },
+  { id: "m9", name: "박중앙", position1: "DF", role: "member", numbers: [{ uniform: "빨검", number: 5 }, { uniform: "흰파", number: 5 }], stats: { games: 14, goals: 0, assists: 1, mvp: 0, attendRate: 70 } },
+  { id: "m10", name: "최센터", position1: "DF", role: "member", numbers: [{ uniform: "빨검", number: 3 }, { uniform: "흰파", number: 3 }], stats: { games: 16, goals: 1, assists: 0, mvp: 0, attendRate: 80 } },
+  { id: "m11", name: "김골키", position1: "GK", role: "member", numbers: [{ uniform: "빨검", number: 1 }, { uniform: "흰파", number: 1 }], stats: { games: 18, goals: 0, assists: 0, mvp: 1, attendRate: 90 } },
 ];
 
 export type Goal = { scorerId: string; assistId?: string };

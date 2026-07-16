@@ -21,10 +21,6 @@ export default function NewMemberPage() {
 
         <PositionSelect />
 
-        <Field label="주발">
-          <Select name="foot" options={[{ v: "R", label: "오른발" }, { v: "L", label: "왼발" }, { v: "both", label: "양발" }]} />
-        </Field>
-
         <Field label="유니폼별 등번호">
           <div className="flex flex-col gap-2">
             <NumberRow uniform="빨검" color="#dc2f3c" />

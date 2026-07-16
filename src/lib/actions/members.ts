@@ -13,7 +13,6 @@ export async function createMember(formData: FormData) {
 
   const position1 = String(formData.get("position1") ?? "MF");
   const position2 = String(formData.get("position2") ?? "");
-  const foot = String(formData.get("foot") ?? "R");
   const role = String(formData.get("role") ?? "member");
 
   const supabase = await createClient();
@@ -24,7 +23,6 @@ export async function createMember(formData: FormData) {
       name,
       position1,
       position2: position2 || null,
-      foot,
       role,
     })
     .select("id")
@@ -67,7 +65,6 @@ export async function updateMember(formData: FormData) {
     name,
     position1: String(formData.get("position1") ?? "MF"),
     position2: String(formData.get("position2") ?? "") || null,
-    foot: String(formData.get("foot") ?? "R"),
   };
   if (manager) patch.role = String(formData.get("role") ?? "member"); // 권한은 운영진만
   await supabase.from("members").update(patch).eq("id", id);

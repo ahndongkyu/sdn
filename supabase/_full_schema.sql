@@ -9,7 +9,6 @@
 -- ---------- ENUMS ----------
 create type member_role as enum ('member', 'manager', 'admin');
 create type position_code as enum ('GK', 'DF', 'MF', 'FW');
-create type foot_code as enum ('L', 'R', 'both');
 create type match_type as enum ('match', 'self');
 create type attend_status as enum ('going', 'notGoing', 'undecided');
 create type attend_source as enum ('self', 'manager');
@@ -21,7 +20,6 @@ create table members (
   nickname text,
   position1 position_code not null default 'MF',
   position2 position_code,
-  foot foot_code not null default 'R',
   role member_role not null default 'member',
   photo_url text,
   status text not null default 'active',
@@ -342,5 +340,4 @@ as $$
 $$;
 
 grant execute on function manager_push_subs() to authenticated;
-
 

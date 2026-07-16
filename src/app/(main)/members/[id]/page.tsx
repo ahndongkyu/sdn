@@ -7,7 +7,6 @@ import { isManager, getMyProfile } from "@/lib/data/auth";
 import { POSITION_LABEL, POSITION_BADGE, DETAIL_POSITION_LABEL } from "@/lib/mock";
 import { Avatar } from "@/components/ui/avatar";
 
-const FOOT_LABEL = { L: "왼발", R: "오른발", both: "양발" } as const;
 const UNIFORM_COLOR: Record<string, string> = {
   빨검: "#dc2f3c",
   파랑: "#1e4fd6",
@@ -54,7 +53,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               {m.position2}{DETAIL_POSITION_LABEL[m.position2] ? ` · ${DETAIL_POSITION_LABEL[m.position2]}` : ""}
             </span>
           )}
-          <span className="rounded-xl bg-white/10 px-2.5 py-0.5 text-[11px] text-navy-muted">{FOOT_LABEL[m.foot]}</span>
         </div>
       </section>
 
