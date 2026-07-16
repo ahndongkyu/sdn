@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
-import { getMemberById } from "@/lib/data/members";
+import { ArrowLeft, MessageCircle, Pencil } from "lucide-react";
+import { getMemberById, getMemberKakaoLink } from "@/lib/data/members";
 import { getMemberStat } from "@/lib/data/stats";
 import { isManager, getMyProfile } from "@/lib/data/auth";
 import { POSITION_LABEL, POSITION_BADGE, DETAIL_POSITION_LABEL } from "@/lib/mock";
@@ -19,6 +19,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const [m, manager, stat, profile] = await Promise.all([getMemberById(id), isManager(), getMemberStat(id), getMyProfile()]);
   if (!m) notFound();
+  const kakaoConnected = manager ? await getMemberKakaoLink(id) : false;
 
   const mine = ((profile?.member_id as string | null) ?? null) === id;
   const badge = POSITION_BADGE[m.position1];
@@ -56,6 +57,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <span className="rounded-xl bg-white/10 px-2.5 py-0.5 text-[11px] text-navy-muted">{FOOT_LABEL[m.foot]}</span>
         </div>
       </section>
+
+      {manager && (
+        <section>
+          <h2 className="mb-2.5 text-[13px] text-muted">계정 연동</h2>
+          <div className="flex items-center gap-3 rounded-xl border border-divider bg-card soft-card px-3.5 py-3">
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${kakaoConnected ? "bg-tint text-accent" : "bg-sunken text-subtle"}`}>
+              <MessageCircle size={17} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-medium text-fg">카카오 계정 {kakaoConnected ? "연결됨" : "미연결"}</div>
+              <div className="mt-0.5 text-[11px] text-subtle">
+                {kakaoConnected ? "카카오 로그인 계정과 연결되어 있어요." : "연결된 카카오 로그인 계정이 없어요."}
+              </div>
+            </div>
+            <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold ${kakaoConnected ? "bg-tint text-accent" : "bg-sunken text-subtle"}`}>
+              {kakaoConnected ? "연결" : "미연결"}
+            </span>
+          </div>
+        </section>
+      )}
 
       <div>
         <h2 className="mb-2.5 text-[13px] text-muted">유니폼별 등번호</h2>

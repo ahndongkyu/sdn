@@ -36,3 +36,14 @@ export async function getMemberById(id: string): Promise<MemberRow | null> {
     .maybeSingle();
   return (data as MemberRow) ?? null;
 }
+
+export async function getMemberKakaoLink(memberId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("member_id", memberId)
+    .limit(1)
+    .maybeSingle();
+  return Boolean(data);
+}
