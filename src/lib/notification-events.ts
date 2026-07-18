@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type NotificationKind = "notice" | "match" | "reminder" | "lineup" | "result" | "approval";
+export type NotificationKind = "notice" | "match" | "reminder" | "lineup" | "result" | "approval" | "cancelled";
 export type NotificationAudience = "all" | "managers" | "members";
 
 export async function recordNotificationEvent(

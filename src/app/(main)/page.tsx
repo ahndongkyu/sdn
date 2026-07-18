@@ -21,7 +21,7 @@ export default async function HomePage() {
 
   const upcoming = matches.filter((m) => !isPast(m)).sort((a, b) => a.match_date.localeCompare(b.match_date));
   const next = upcoming[0] ?? null;
-  const last = matches.filter(isPast)[0] ?? null;
+  const last = matches.filter((match) => isPast(match) && match.status !== "cancelled")[0] ?? null;
 
   // 날씨는 외부 API라 Suspense로 분리 스트리밍 (홈 렌더를 막지 않음)
   const [myStatus, nextFormation] = await Promise.all([

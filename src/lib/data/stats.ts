@@ -32,7 +32,7 @@ export async function getMemberStats(season: number = currentSeason()): Promise<
     supabase.from("members").select("id, name, position1, position2").eq("status", "active"),
     supabase.from("goals").select("match_id, scorer_id, assist_id"),
     supabase.from("attendances").select("match_id, member_id").eq("status", "going"),
-    supabase.from("matches").select("id, match_date, mom_vote_close"),
+    supabase.from("matches").select("id, match_date, mom_vote_close, status"),
     supabase.from("mvp_votes").select("match_id, target_id"),
   ]);
 
@@ -42,7 +42,7 @@ export async function getMemberStats(season: number = currentSeason()): Promise<
   // 해당 시즌(연도) 중 오늘까지 진행된 경기 id 집합 — 예정 경기는 출전/출석률에서 제외
   const inSeason = new Set(
     matches
-      .filter((m) => Number(m.match_date.slice(0, 4)) === season && m.match_date <= today)
+      .filter((m) => Number(m.match_date.slice(0, 4)) === season && m.match_date <= today && m.status !== "cancelled")
       .map((m) => m.id),
   );
   const goals = (goalsRes.data ?? []).filter((g) => inSeason.has(g.match_id));

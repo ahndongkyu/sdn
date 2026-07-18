@@ -5,14 +5,17 @@ export function ConfirmSubmit({
   message,
   className,
   children,
+  form,
 }: {
   message: string;
   className?: string;
   children: React.ReactNode;
+  form?: string;
 }) {
   return (
     <button
       type="submit"
+      form={form}
       className={className}
       onClick={(e) => {
         if (!window.confirm(message)) e.preventDefault();

@@ -60,6 +60,7 @@ create table matches (
   youtube_url text,
   mvp_member_id uuid references members(id) on delete set null,
   status text not null default 'upcoming',
+  cancel_reason text,
   created_at timestamptz not null default now()
 );
 
@@ -340,4 +341,3 @@ as $$
 $$;
 
 grant execute on function manager_push_subs() to authenticated;
-

@@ -94,6 +94,56 @@ export async function updateMatch(formData: FormData) {
   redirect(`/matches/${id}?toast=${encodeURIComponent("경기 정보가 수정됐어요")}`);
 }
 
+// 경기 취소 (운영진) — 일정은 남기고 점수·참여 기록 집계에서는 제외한다.
+export async function cancelMatch(formData: FormData) {
+  if (!(await isManager())) return;
+  const id = String(formData.get("id") ?? "");
+  const reasonType = String(formData.get("reason_type") ?? "");
+  const detail = String(formData.get("cancel_reason") ?? "").trim();
+  const allowedReasons = ["우천", "시설 사정", "상대팀 사정", "기타"];
+  if (!id || !allowedReasons.includes(reasonType) || (reasonType === "기타" && !detail)) return;
+
+  const supabase = await createClient();
+  const { data: match } = await supabase
+    .from("matches")
+    .select("opponent, type, score_for, status")
+    .eq("id", id)
+    .maybeSingle();
+
+  // 이미 결과가 입력된 경기는 취소 처리하지 않는다.
+  if (!match || match.score_for !== null || match.status === "cancelled") return;
+
+  const cancelReason = detail || `${reasonType}으로 취소`;
+  const { error } = await supabase
+    .from("matches")
+    .update({ status: "cancelled", cancel_reason: cancelReason, mvp_member_id: null, mom_vote_close: null })
+    .eq("id", id);
+  if (error) return;
+
+  // 기존 등록/리마인드 알림은 취소 알림으로 대체한다.
+  await supabase.from("notification_events").delete().eq("reference_id", id);
+  const label = match.type === "self" ? match.opponent : `vs ${match.opponent}`;
+  await recordNotificationEvent(supabase, {
+    kind: "cancelled",
+    referenceId: id,
+    title: `${label} 경기가 취소됐어요`,
+    body: cancelReason,
+    url: `/matches/${id}`,
+    audience: "all",
+  });
+  try {
+    await sendPushToAll({ title: "경기 취소", body: `${label} · ${cancelReason}`, url: `/matches/${id}` });
+  } catch {
+    /* 푸시 실패 무시 */
+  }
+
+  revalidatePath(`/matches/${id}`);
+  revalidatePath("/matches");
+  revalidatePath("/notifications");
+  revalidatePath("/");
+  redirect(`/matches/${id}?toast=${encodeURIComponent("경기가 취소 처리됐어요")}`);
+}
+
 // 매치 삭제 (운영진)
 export async function deleteMatch(formData: FormData) {
   if (!(await isManager())) return;
@@ -114,6 +164,8 @@ export async function setAttendance(matchId: string, status: "going" | "notGoing
   if (!profile?.member_id) return;
 
   const supabase = await createClient();
+  const { data: match } = await supabase.from("matches").select("status").eq("id", matchId).maybeSingle();
+  if (match?.status === "cancelled") return;
   await supabase
     .from("attendances")
     .upsert(
@@ -133,6 +185,8 @@ export async function setAttendanceFor(
 ) {
   if (!(await isManager())) return;
   const supabase = await createClient();
+  const { data: match } = await supabase.from("matches").select("status").eq("id", matchId).maybeSingle();
+  if (match?.status === "cancelled") return;
   await supabase
     .from("attendances")
     .upsert(

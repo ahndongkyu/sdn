@@ -16,6 +16,7 @@ export type MatchRow = {
   score_against: number | null;
   youtube_url: string | null;
   status: string;
+  cancel_reason: string | null;
   mvp_member_id: string | null;
   mom_vote_close: string | null;
 };
@@ -31,16 +32,16 @@ export type AttendanceRow = {
   } | null;
 };
 
-export function isPast(m: { match_date: string; score_for: number | null }) {
+export function isPast(m: { match_date: string; score_for: number | null; status?: string }) {
   const today = new Date().toISOString().slice(0, 10);
-  return m.score_for !== null || m.match_date < today;
+  return m.status === "cancelled" || m.score_for !== null || m.match_date < today;
 }
 
 export async function getMatches(): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id")
+    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id")
     .order("match_date", { ascending: false });
   if (error) {
     console.error("getMatches", error);
@@ -53,7 +54,7 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, mvp_member_id, mom_vote_close")
+    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close")
     .eq("id", id)
     .maybeSingle();
   return (data as MatchRow) ?? null;
@@ -101,6 +102,7 @@ export async function getTeamStats(season?: number) {
   const played = matches.filter(
     (m) =>
       m.type === "match" &&
+      m.status !== "cancelled" &&
       m.score_for !== null &&
       m.score_against !== null &&
       new Date(m.match_date + "T00:00:00").getFullYear() === y,

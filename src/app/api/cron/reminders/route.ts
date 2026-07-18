@@ -24,7 +24,8 @@ export async function GET(request: Request) {
   const { data: matches } = await admin
     .from("matches")
     .select("id, opponent, match_time, type")
-    .eq("match_date", tomorrow);
+    .eq("match_date", tomorrow)
+    .neq("status", "cancelled");
 
   if (!matches || matches.length === 0) return NextResponse.json({ tomorrow, matches: 0, sent: 0 });
 

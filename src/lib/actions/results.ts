@@ -22,9 +22,10 @@ export async function saveScore(matchId: string, scoreFor: number, scoreAgainst:
   // MOM 투표 마감시각: 첫 결과 입력 시점 + 1시간 (이미 있으면 유지)
   const [{ data: cur }, { data: match }, { data: attendances }] = await Promise.all([
     supabase.from("matches").select("mom_vote_close").eq("id", matchId).single(),
-    supabase.from("matches").select("opponent, type").eq("id", matchId).single(),
+    supabase.from("matches").select("opponent, type, status").eq("id", matchId).single(),
     supabase.from("attendances").select("member_id").eq("match_id", matchId).eq("status", "going"),
   ]);
+  if (match?.status === "cancelled") return;
   const update: Record<string, unknown> = { score_for: scoreFor, score_against: scoreAgainst, status: "past" };
   if (!cur?.mom_vote_close) update.mom_vote_close = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
@@ -61,6 +62,8 @@ export async function saveScore(matchId: string, scoreFor: number, scoreAgainst:
 export async function addGoal(matchId: string, scorerId: string | null, assistId: string | null, isOwnGoal = false) {
   if (!(await isManager())) return;
   const supabase = await createClient();
+  const { data: match } = await supabase.from("matches").select("status").eq("id", matchId).maybeSingle();
+  if (match?.status === "cancelled") return;
   await supabase.from("goals").insert({
     match_id: matchId,
     scorer_id: isOwnGoal ? null : scorerId,

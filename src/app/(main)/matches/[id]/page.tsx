@@ -31,6 +31,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const guests = await getGuests(id);
   const talkCount = await getMatchTalkCount(id);
   const talkActive = talkCount.hasPost || talkCount.comments > 0;
+  const cancelled = match.status === "cancelled";
 
   const nameOf = new Map(members.map((m) => [m.id, m.name]));
   const past = isPast(match);
@@ -77,9 +78,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             <Link href={`/admin/matches/${id}/edit`} className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-xs text-muted">
               <Pencil size={13} /> 수정
             </Link>
-            <Link href={`/admin/matches/${id}/result`} className="rounded-lg bg-red px-2.5 py-1.5 text-xs text-white">
-              결과 입력
-            </Link>
+            {!cancelled && <Link href={`/admin/matches/${id}/result`} className="rounded-lg bg-red px-2.5 py-1.5 text-xs text-white">결과 입력</Link>}
           </div>
         )}
       </div>
@@ -88,7 +87,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       <section className="rounded-2xl border border-line bg-card soft-card p-4">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-[12px] text-subtle">{match.type === "self" ? "자체전" : "정규 매치"}</span>
-          {past && match.score_for !== null && (
+          {cancelled ? (
+            <span className="rounded-full border border-danger/60 bg-danger/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-danger">경기 취소</span>
+          ) : past && match.score_for !== null && (
             <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: r.color }}>{r.label}</span>
           )}
         </div>
@@ -114,7 +115,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           {match.place && <div className="text-[12px] text-muted"><MapPin size={12} className="mr-1 inline align-[-1px] text-subtle" />{match.place}</div>}
         </div>
 
-        {past && (scorers.length > 0 || ownGoals > 0) && (
+        {cancelled && <div className="mt-3 border-t border-divider pt-3 text-center text-[12px] font-bold text-danger">{match.cancel_reason ?? "경기 취소"}</div>}
+
+        {!cancelled && past && (scorers.length > 0 || ownGoals > 0) && (
           <div className="mt-3 flex flex-col items-center gap-2 border-t border-divider pt-3.5">
             {scorers.map((s, i) => (
               <div key={i} className="text-center">
@@ -136,7 +139,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </section>
 
       {/* 예정: RSVP */}
-      {!past && (
+      {!past && !cancelled && (
         <section className="rounded-2xl border border-divider bg-card soft-card p-3.5">
           <div className="mb-2.5 text-[13px] text-muted">참석 체크</div>
           <RsvpButtons matchId={id} current={myStatus} />
@@ -169,7 +172,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* 참가 선수 (+ MOM 투표) */}
-      <div>
+      {!cancelled && <div>
         <div className="mb-2.5 flex items-center justify-between">
           <h2 className="text-[13px] text-muted">참가 선수</h2>
           {isManager ? (
@@ -206,7 +209,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             }
           />
         )}
-      </div>
+      </div>}
     </div>
   );
 }

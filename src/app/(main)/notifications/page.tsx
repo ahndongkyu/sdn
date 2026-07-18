@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Bell,
   CalendarPlus,
+  CircleOff,
   ChevronRight,
   Megaphone,
   Shirt,
@@ -113,6 +114,9 @@ function NotificationIcon({ kind }: { kind: NotificationKind }) {
   }
   if (kind === "result") {
     return <span aria-label="경기 결과" className={common} style={{ color: "#ef9f27", background: "color-mix(in srgb, #ef9f27 14%, transparent)" }}><Trophy size={17} /></span>;
+  }
+  if (kind === "cancelled") {
+    return <span aria-label="경기 취소" className={common} style={{ color: "var(--sdn-danger)", background: "color-mix(in srgb, var(--sdn-danger) 13%, transparent)" }}><CircleOff size={17} /></span>;
   }
   return <span aria-label="가입 신청" className={`${common} bg-sunken text-muted`}><UserPlus size={17} /></span>;
 }
