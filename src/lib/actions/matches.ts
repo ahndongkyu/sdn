@@ -100,7 +100,7 @@ export async function cancelMatch(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const reasonType = String(formData.get("reason_type") ?? "");
   const detail = String(formData.get("cancel_reason") ?? "").trim();
-  const allowedReasons = ["우천", "시설 사정", "상대팀 사정", "기타"];
+  const allowedReasons = ["우천 취소", "인원 부족", "상대팀 사정", "기타"];
   if (!id || !allowedReasons.includes(reasonType) || (reasonType === "기타" && !detail)) return;
 
   const supabase = await createClient();
