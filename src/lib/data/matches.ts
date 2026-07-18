@@ -37,6 +37,10 @@ export function isPast(m: { match_date: string; score_for: number | null; status
   return m.status === "cancelled" || m.score_for !== null || m.match_date < today;
 }
 
+export function getCancelReasonLabel(reason: string | null) {
+  return reason?.replace(/으로 취소$/, "") || "경기 취소";
+}
+
 export async function getMatches(): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

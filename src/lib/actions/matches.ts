@@ -113,7 +113,7 @@ export async function cancelMatch(formData: FormData) {
   // 이미 결과가 입력된 경기는 취소 처리하지 않는다.
   if (!match || match.score_for !== null || match.status === "cancelled") return;
 
-  const cancelReason = detail || `${reasonType}으로 취소`;
+  const cancelReason = detail || reasonType;
   const { error } = await supabase
     .from("matches")
     .update({ status: "cancelled", cancel_reason: cancelReason, mvp_member_id: null, mom_vote_close: null })

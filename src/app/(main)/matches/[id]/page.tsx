@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle, ChevronRight } from "lucide-react";
-import { getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
+import { getCancelReasonLabel, getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
 import { getGuests } from "@/lib/data/guests";
@@ -115,7 +115,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           {match.place && <div className="text-[12px] text-muted"><MapPin size={12} className="mr-1 inline align-[-1px] text-subtle" />{match.place}</div>}
         </div>
 
-        {cancelled && <div className="mt-3 border-t border-divider pt-3 text-center text-[12px] font-bold text-danger">{match.cancel_reason ?? "경기 취소"}</div>}
+        {cancelled && <div className="mt-3 border-t border-divider pt-3 text-center text-[12px] font-bold text-danger">{getCancelReasonLabel(match.cancel_reason)}</div>}
 
         {!cancelled && past && (scorers.length > 0 || ownGoals > 0) && (
           <div className="mt-3 flex flex-col items-center gap-2 border-t border-divider pt-3.5">

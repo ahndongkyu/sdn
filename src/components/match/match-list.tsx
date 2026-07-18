@@ -269,8 +269,8 @@ function CompletedRow({ match: m }: { match: MatchRow }) {
   const score = m.score_for == null || m.score_against == null ? "-" : `${m.score_for} : ${m.score_against}`;
 
   return (
-    <Link href={`/matches/${m.id}`} className={`relative flex items-center gap-3 overflow-hidden px-3.5 py-3 ${cancelled ? "bg-danger/[0.025]" : ""}`}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${cancelled ? "bg-danger/45" : result.barClassName}`} aria-hidden />
+    <Link href={`/matches/${m.id}`} className={`relative flex items-center gap-3 overflow-hidden px-3.5 py-3 ${cancelled ? "bg-sunken/50" : ""}`}>
+      <span className={`absolute inset-y-0 left-0 w-1 ${cancelled ? "bg-subtle" : result.barClassName}`} aria-hidden />
       <div className="w-9 shrink-0 text-center">
         <div className={`text-[16px] font-extrabold leading-none tabular-nums ${cancelled ? "text-muted" : "text-fg"}`}>{day}</div>
         <div className="mt-1 text-[10px] text-subtle">{date.weekday}</div>
@@ -280,11 +280,10 @@ function CompletedRow({ match: m }: { match: MatchRow }) {
         <div className="mt-1 flex items-center gap-1 text-[11px] text-subtle">
           {m.place ? <><MapPin size={11} /><span className="truncate">{m.place}</span></> : <span>장소 미정</span>}
         </div>
-        {cancelled && <div className="mt-1 truncate text-[10.5px] font-bold text-danger">{m.cancel_reason ?? "경기 취소"}</div>}
       </div>
       <div className="shrink-0 text-right">
         {cancelled ? (
-          <span className="inline-flex rounded-full border border-danger/60 bg-card px-2.5 py-1 text-[10px] font-extrabold text-danger">경기 취소</span>
+          <span className="inline-flex rounded-full border border-line bg-card px-2.5 py-1 text-[10px] font-extrabold text-muted">경기 취소</span>
         ) : (
           <>
             <div className="text-[15px] font-extrabold text-fg tabular-nums">{score}</div>
