@@ -52,7 +52,7 @@ export function MemberList({ members }: { members: MemberRow[] }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 text-sm">
                         <span className="truncate">{m.name}</span>
-                        {m.role !== "member" && <span className="shrink-0 rounded-lg bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white">운영진</span>}
+                        {m.role === "manager" && <span className="shrink-0 rounded-lg bg-accent px-1.5 py-0.5 text-[10px] font-bold text-white">운영진</span>}
                       </div>
                       <div className="text-[11px] text-subtle">
                         {m.position2 ? `${m.position2} · ${DETAIL_POSITION_LABEL[m.position2] ?? ""}`.replace(/ · $/, "") : "상세 포지션 미설정"}
