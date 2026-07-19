@@ -27,11 +27,15 @@ export function PlaceSearch({
   defaultAddress = "",
   defaultLat,
   defaultLng,
+  allowUnspecified = false,
+  variant = "plain",
 }: {
   defaultPlace?: string;
   defaultAddress?: string;
   defaultLat?: number | null;
   defaultLng?: number | null;
+  allowUnspecified?: boolean;
+  variant?: "plain" | "section";
 }) {
   const [place, setPlace] = useState(defaultPlace);
   const [address, setAddress] = useState(defaultAddress);
@@ -39,6 +43,7 @@ export function PlaceSearch({
     defaultLat != null && defaultLng != null ? { lat: defaultLat, lng: defaultLng } : null,
   );
   const [geo, setGeo] = useState<"idle" | "loading" | "done" | "fail">(defaultLat != null ? "done" : "idle");
+  const [unspecified, setUnspecified] = useState(false);
 
   async function search() {
     try {
@@ -75,43 +80,71 @@ export function PlaceSearch({
   }
 
   return (
-    <div className="space-y-2">
-      <input type="hidden" name="place" value={place} />
-      <input type="hidden" name="place_address" value={address} />
-      <input type="hidden" name="place_lat" value={coords?.lat ?? ""} />
-      <input type="hidden" name="place_lng" value={coords?.lng ?? ""} />
+    <div className={variant === "section" ? "rounded-[18px] border border-borderblue bg-card p-3.5 soft-card" : "space-y-2"}>
+      <input type="hidden" name="place" value={unspecified ? "" : place} />
+      <input type="hidden" name="place_address" value={unspecified ? "" : address} />
+      <input type="hidden" name="place_lat" value={unspecified ? "" : coords?.lat ?? ""} />
+      <input type="hidden" name="place_lng" value={unspecified ? "" : coords?.lng ?? ""} />
 
-      <input
-        value={place}
-        onChange={(e) => setPlace(e.target.value)}
-        placeholder="장소명 (예: 안산시랑운동장)"
-        className="input"
-      />
-
-      <button
-        type="button"
-        onClick={search}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-card py-2.5 text-[13px] font-medium text-accent"
-      >
-        <Search size={15} /> {address ? "주소 다시 찾기" : "주소 찾기"}
-      </button>
-
-      {address && (
-        <div className="rounded-lg bg-tint px-3 py-2 text-[12px]">
-          <div className="flex items-start gap-1 text-fg">
-            <MapPin size={13} className="mt-0.5 shrink-0 text-accent" /> {address}
+      {variant === "section" && (
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-[15px] font-bold text-fg">
+            <MapPin size={17} className="text-accent" /> 장소
           </div>
-          <div className="mt-1 text-[11px]">
-            {geo === "loading" ? (
-              <span className="text-subtle">좌표 확인 중…</span>
-            ) : geo === "done" ? (
-              <span className="text-[#0f6e56]"><Check size={11} className="mr-0.5 inline align-[-1px]" />날씨 위치 설정됨</span>
-            ) : geo === "fail" ? (
-              <span className="text-subtle">좌표를 못 찾았어요 (날씨는 서울 기준)</span>
-            ) : null}
-          </div>
+          {allowUnspecified && (
+            <button
+              type="button"
+              aria-pressed={unspecified}
+              onClick={() => setUnspecified((value) => !value)}
+              className={`rounded-[10px] border px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${unspecified ? "border-accent bg-tint text-accent" : "border-borderblue bg-card text-muted"}`}
+            >
+              장소 미정
+            </button>
+          )}
         </div>
       )}
+
+      {!unspecified && (
+        <div className={variant === "section" ? "space-y-3" : "space-y-2"}>
+          {variant === "section" && <label className="block text-[11.5px] font-semibold text-muted">장소명</label>}
+          <input
+            value={place}
+            onChange={(e) => setPlace(e.target.value)}
+            placeholder={variant === "section" ? "장소명을 입력하세요" : "장소명"}
+            className="input"
+          />
+
+          {variant === "section" && <label className="block pt-0.5 text-[11.5px] font-semibold text-muted">주소</label>}
+          <button
+            type="button"
+            onClick={search}
+            className={`flex w-full items-center justify-between rounded-[12px] border px-3 py-2 text-left text-[13px] ${variant === "section" ? "border-borderblue bg-card" : "border-line bg-card justify-center gap-1.5 text-accent"}`}
+          >
+            <span className={address ? "truncate text-fg" : "text-subtle"}>{address || (variant === "section" ? "주소를 검색하세요" : "주소 찾기")}</span>
+            <span className="ml-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] border border-borderblue bg-sunken text-accent"><Search size={15} /></span>
+          </button>
+
+          {address && (
+            <div className="rounded-lg bg-tint px-3 py-2 text-[12px]">
+              <div className="flex items-start gap-1 text-fg">
+                <MapPin size={13} className="mt-0.5 shrink-0 text-accent" /> {address}
+              </div>
+              <div className="mt-1 text-[11px]">
+                {geo === "loading" ? (
+                  <span className="text-subtle">좌표 확인 중…</span>
+                ) : geo === "done" ? (
+                  <span className="text-[#0f6e56]"><Check size={11} className="mr-0.5 inline align-[-1px]" />날씨 위치 설정됨</span>
+                ) : geo === "fail" ? (
+                  <span className="text-subtle">좌표를 못 찾았어요 (날씨는 서울 기준)</span>
+                ) : null}
+              </div>
+            </div>
+          )}
+          {variant === "section" && <p className="pt-0.5 text-[11px] text-subtle">주소를 선택하면 지도 위치가 자동으로 설정돼요.</p>}
+        </div>
+      )}
+
+      {unspecified && variant === "section" && <p className="text-[12px] text-subtle">장소는 추후에 입력할 수 있어요.</p>}
     </div>
   );
 }

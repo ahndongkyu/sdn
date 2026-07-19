@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
 import { getMatches, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
+import { getMemberStat } from "@/lib/data/stats";
 import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
@@ -18,6 +19,7 @@ export default async function HomePage() {
   const myMemberId = (profile?.member_id as string | null) ?? null;
   const latestNotifAt = notifs[0]?.at ?? null;
   const season = new Date().getFullYear();
+  const myStat = myMemberId ? await getMemberStat(myMemberId, season) : null;
 
   const upcoming = matches.filter((m) => !isPast(m)).sort((a, b) => a.match_date.localeCompare(b.match_date));
   const next = upcoming[0] ?? null;
@@ -112,6 +114,23 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* 내 기록 — 회원 계정 연결 시에만 노출 */}
+      {myStat && (
+        <Link href={`/stats?season=${season}`} className="relative block overflow-hidden rounded-[18px] border border-borderblue bg-card px-3.5 py-3.5 soft-card">
+          <span className="absolute inset-x-0 top-0 h-[3px] bg-accent" aria-hidden />
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[13px] font-extrabold text-fg">내 기록</span>
+            <span className="text-[10.5px] font-medium text-subtle">{season} 시즌</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            <PersonalStat value={myStat.games} label="경기" />
+            <PersonalStat value={myStat.goals} label="득점" />
+            <PersonalStat value={myStat.assists} label="도움" />
+            <PersonalStat value={`${myStat.attendRate}%`} label="출석" accent />
+          </div>
+        </Link>
+      )}
+
       {/* 경기 날씨 (외부 API — 스트리밍) */}
       {next && (
         <Suspense fallback={<WeatherSkeleton region={regionLabel(next.place_address)} />}>
@@ -164,6 +183,14 @@ function HeroStat({ value, label, accent }: { value: string | number; label: str
     <div className="flex-1">
       <div className="text-[19px] font-extrabold tabular-nums" style={{ color: accent ? "var(--sdn-pink)" : "#fff" }}>{value}</div>
       <div className="mt-0.5 text-[11px]" style={{ color: "var(--sdn-on-hero-sub)" }}>{label}</div>
+    </div>
+  );
+}
+function PersonalStat({ value, label, accent }: { value: string | number; label: string; accent?: boolean }) {
+  return (
+    <div className={`min-w-0 rounded-[11px] px-1 py-2 text-center ${accent ? "bg-tint" : "bg-sunken/70"}`}>
+      <div className={`text-[18px] font-extrabold leading-none tabular-nums ${accent ? "text-accent" : "text-fg"}`}>{value}</div>
+      <div className={`mt-1.5 text-[10px] font-medium ${accent ? "text-accent" : "text-subtle"}`}>{label}</div>
     </div>
   );
 }

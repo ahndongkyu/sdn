@@ -1,31 +1,34 @@
 import Link from "next/link";
-import { X } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 import { createMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { PlaceSearch } from "@/components/match/place-search";
+import { MatchTimeField } from "@/components/match/match-time-field";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
 export default function NewMatchPage() {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+
   return (
     <div>
-      <div className="mb-5 flex items-center gap-2">
-        <Link href="/matches">
-          <X size={20} className="text-muted" />
+      <div className="mb-6 flex items-center gap-2">
+        <Link href="/matches" aria-label="경기 등록 취소" className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-sunken">
+          <X size={19} />
         </Link>
-        <h1 className="text-[15px] font-medium">경기 등록</h1>
+        <h1 className="text-[17px] font-bold text-fg">경기 등록</h1>
       </div>
 
-      <form action={createMatch} className="space-y-4">
+      <form action={createMatch} className="space-y-5">
         <Field label="경기 유형">
-          <div className="flex gap-1.5">
+          <div className="flex rounded-[13px] border border-borderblue bg-card p-1 soft-card">
             <label className="flex-1">
               <input type="radio" name="type" value="match" defaultChecked className="peer hidden" />
-              <span className="block rounded-lg border border-line bg-card py-2.5 text-center text-[13px] text-muted peer-checked:border-navy peer-checked:bg-navy peer-checked:text-white">매치</span>
+              <span className="block rounded-[9px] py-2.5 text-center text-[13px] font-semibold text-muted transition-colors peer-checked:bg-navy peer-checked:text-white">매치</span>
             </label>
             <label className="flex-1">
               <input type="radio" name="type" value="self" className="peer hidden" />
-              <span className="block rounded-lg border border-line bg-card py-2.5 text-center text-[13px] text-muted peer-checked:border-navy peer-checked:bg-navy peer-checked:text-white">자체전</span>
+              <span className="block rounded-[9px] py-2.5 text-center text-[13px] font-semibold text-muted transition-colors peer-checked:bg-navy peer-checked:text-white">자체전</span>
             </label>
           </div>
         </Field>
@@ -34,20 +37,23 @@ export default function NewMatchPage() {
           <input name="opponent" required placeholder="번개FC (자체전이면 홍/백 등)" className="input" />
         </Field>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <Field label="날짜">
-            <input name="match_date" type="date" required className="input" />
-          </Field>
-          <Field label="시간">
-            <input name="match_time" type="time" defaultValue="21:00" className="input" />
-          </Field>
-        </div>
+        <section className="rounded-[18px] border border-borderblue bg-card p-3.5 soft-card">
+          <div className="mb-3 flex items-center gap-1.5 text-[15px] font-bold text-fg">
+            <CalendarDays size={17} className="text-accent" /> 일정
+          </div>
+          <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2.5">
+            <Field label="날짜">
+              <input name="match_date" type="date" required defaultValue={today} className="input font-medium tabular-nums" />
+            </Field>
+            <Field label="시간">
+              <MatchTimeField />
+            </Field>
+          </div>
+        </section>
 
-        <Field label="장소 (검색 · 선택 시 주소·좌표 자동)">
-          <PlaceSearch />
-        </Field>
+        <PlaceSearch allowUnspecified variant="section" />
 
-        <Field label="유니폼 (포메이션 등번호에 적용)">
+        <Field label="유니폼">
           <select name="uniform" className="input">
             <option value="">선택 안 함</option>
             {UNIFORMS.map((u) => (
@@ -56,11 +62,11 @@ export default function NewMatchPage() {
           </select>
         </Field>
 
-        <Field label="유튜브 영상 URL (경기 후 입력, 선택)">
+        <Field label="유튜브 영상 URL (선택)">
           <input name="youtube_url" type="url" placeholder="https://youtu.be/..." className="input" />
         </Field>
 
-        <ConfirmSubmit message="이 경기를 등록하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">경기 등록</ConfirmSubmit>
+        <ConfirmSubmit message="이 경기를 등록하시겠습니까?" className="btn-glow w-full rounded-[13px] bg-accent py-3.5 text-sm font-bold text-white">경기 등록</ConfirmSubmit>
       </form>
     </div>
   );
@@ -68,8 +74,8 @@ export default function NewMatchPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="mb-1.5 text-xs text-muted">{label}</div>
+    <div className="min-w-0">
+      <div className="mb-1.5 text-[11.5px] font-semibold text-muted">{label}</div>
       {children}
     </div>
   );
