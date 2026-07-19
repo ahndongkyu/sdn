@@ -41,11 +41,11 @@ export default function NewMatchPage() {
             일정
           </div>
           <div className="space-y-2.5">
-            <div className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-2.5">
+            <div className="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-2">
               <label htmlFor="match-date" className="text-[11.5px] font-semibold text-muted">날짜</label>
-              <input id="match-date" name="match_date" type="date" required defaultValue={today} className="input h-11 min-w-0 font-medium tabular-nums" />
+              <input id="match-date" name="match_date" type="date" required defaultValue={today} className="input schedule-native-input font-medium tabular-nums" />
             </div>
-            <div className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-2.5">
+            <div className="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-2">
               <span className="text-[11.5px] font-semibold text-muted">시간</span>
               <MatchTimeField />
             </div>

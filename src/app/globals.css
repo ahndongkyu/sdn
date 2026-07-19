@@ -213,6 +213,16 @@ body {
 }
 .input:focus { outline: none; border-color: var(--sdn-blue); }
 
+/* iOS Safari의 date/time 컨트롤은 고유 최소 폭·높이를 가져서 좁은 카드에서 넘칠 수 있다. */
+.schedule-native-input {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  height: 44px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* ===== 효과 클래스 ===== */
 /* 히어로(시즌 성적) 카드 — 딥네이비 그라데이션 + 우상단 글로우 */
 .hero-card {
