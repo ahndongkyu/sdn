@@ -40,13 +40,15 @@ export default function NewMatchPage() {
           <div className="mb-3 flex items-center gap-1.5 text-[15px] font-bold text-fg">
             일정
           </div>
-          <div className="space-y-2.5 min-[460px]:grid min-[460px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] min-[460px]:space-y-0 min-[460px]:gap-2.5">
-            <Field label="날짜">
-              <input name="match_date" type="date" required defaultValue={today} className="input h-12 min-w-0 font-medium tabular-nums" />
-            </Field>
-            <Field label="시간">
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-2.5">
+              <label htmlFor="match-date" className="text-[11.5px] font-semibold text-muted">날짜</label>
+              <input id="match-date" name="match_date" type="date" required defaultValue={today} className="input h-11 min-w-0 font-medium tabular-nums" />
+            </div>
+            <div className="grid grid-cols-[42px_minmax(0,1fr)] items-center gap-2.5">
+              <span className="text-[11.5px] font-semibold text-muted">시간</span>
               <MatchTimeField />
-            </Field>
+            </div>
           </div>
         </section>
 
