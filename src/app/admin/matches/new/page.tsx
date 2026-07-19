@@ -42,7 +42,7 @@ export default function NewMatchPage() {
           </div>
           <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2.5">
             <Field label="날짜">
-              <input name="match_date" type="date" required defaultValue={today} className="input font-medium tabular-nums" />
+              <input name="match_date" type="date" required defaultValue={today} className="input h-[42px] font-medium tabular-nums" />
             </Field>
             <Field label="시간">
               <MatchTimeField />

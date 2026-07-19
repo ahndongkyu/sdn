@@ -17,7 +17,7 @@ export function MatchTimeField() {
           disabled={unspecified}
           onChange={(event) => setTime(event.target.value)}
           aria-label="경기 시간"
-          className="input min-w-0 flex-1 font-medium tabular-nums disabled:cursor-not-allowed disabled:bg-sunken disabled:text-subtle"
+          className="input h-[42px] min-w-0 flex-1 font-medium tabular-nums disabled:cursor-not-allowed disabled:bg-sunken disabled:text-subtle"
         />
         <button
           type="button"
