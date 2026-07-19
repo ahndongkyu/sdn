@@ -25,7 +25,7 @@ export async function getAttendComments(matchId: string): Promise<AttendComment[
       authorId: r.author_id as string,
       authorName: m?.name ?? "회원",
       position1: m?.position1 ?? "MF",
-      isManagerAuthor: m?.role === "manager" || m?.role === "admin",
+      isManagerAuthor: m?.role === "manager",
       title: m?.title ?? null,
       body: r.body as string,
       createdAt: r.created_at as string,

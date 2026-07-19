@@ -87,7 +87,7 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
                       <span className="shrink-0 rounded-[8px] px-2 py-0.5 text-[11px]" style={{ background: badge.bg, color: badge.fg }}>{m.position1}</span>
                       <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[13px] font-medium">
                         <span className="truncate">{m.name}</span>
-                        {m.role !== "member" && <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold text-white">{m.title ?? "운영진"}</span>}
+                        {m.role === "manager" && <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold text-white">{m.title ?? "운영진"}</span>}
                       </div>
                       <Pencil size={14} className="shrink-0 text-faint" />
                     </Link>

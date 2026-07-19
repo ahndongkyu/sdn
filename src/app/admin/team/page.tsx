@@ -11,7 +11,7 @@ const UNIFORMS = [
 
 export default async function TeamSettingsPage() {
   const members = await getMembers();
-  const managers = members.filter((m) => m.role !== "member").length;
+  const managers = members.filter((m) => m.role === "manager").length;
 
   return (
     <div className="space-y-5">

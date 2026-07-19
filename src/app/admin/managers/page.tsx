@@ -11,7 +11,7 @@ export default async function ManagersPage() {
 
   const [titles, members] = await Promise.all([getManagerTitles(), getMembers()]);
   const managers = members
-    .filter((m) => m.role === "manager" || m.role === "admin")
+    .filter((m) => m.role === "manager")
     .map((m) => ({ id: m.id, name: m.name, position1: m.position1, title: m.title }));
 
   return (

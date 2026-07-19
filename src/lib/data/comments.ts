@@ -72,7 +72,7 @@ export async function getMatchTalk(matchId: string, myMemberId: string | null): 
     authorId: r.author_id,
     authorName: r.members?.name ?? "회원",
     position1: r.members?.position1 ?? "MF",
-    isManagerAuthor: r.members?.role === "manager" || r.members?.role === "admin",
+    isManagerAuthor: r.members?.role === "manager",
     title: r.members?.title ?? null,
     likes: likeCount.get(r.id) ?? 0,
     likedByMe: likedByMe.has(r.id),

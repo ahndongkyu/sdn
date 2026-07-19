@@ -37,7 +37,7 @@ export default async function MorePage() {
             {member ? `${member.position1} · SDN` : "프로필 미연결"}
           </div>
         </div>
-        {isManager && <span className="rounded-xl bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">{member?.title ?? "운영진"}</span>}
+        {member?.role === "manager" && <span className="rounded-xl bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">{member.title ?? "운영진"}</span>}
       </Link>
 
       {/* 일반 메뉴 */}

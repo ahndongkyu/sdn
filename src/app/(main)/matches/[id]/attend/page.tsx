@@ -42,7 +42,7 @@ export default async function AttendPollPage({ params }: { params: Promise<{ id:
 
   const respondedIds = new Set(attendances.filter((a) => a.members).map((a) => a.members!.id));
   const noResponse: Person[] = members
-    .filter((m) => m.role !== "admin" && !respondedIds.has(m.id))
+    .filter((m) => !respondedIds.has(m.id))
     .map((m) => ({ name: m.name, position1: m.position1 }));
 
   const myRow = attendances.find((a) => a.members?.id === myMemberId);
