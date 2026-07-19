@@ -88,9 +88,7 @@ export function PlaceSearch({
 
       {variant === "section" && (
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[15px] font-bold text-fg">
-            <MapPin size={17} className="text-accent" /> 장소
-          </div>
+          <div className="text-[15px] font-bold text-fg">장소</div>
           {allowUnspecified && (
             <button
               type="button"

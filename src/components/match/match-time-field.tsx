@@ -23,7 +23,7 @@ export function MatchTimeField() {
           type="button"
           aria-pressed={unspecified}
           onClick={() => setUnspecified((value) => !value)}
-          className={`shrink-0 rounded-[10px] border px-2.5 py-2 text-[12px] font-semibold transition-colors ${unspecified ? "border-accent bg-tint text-accent" : "border-borderblue bg-card text-muted"}`}
+          className={`h-[42px] shrink-0 rounded-[10px] border px-2.5 text-[12px] font-semibold transition-colors ${unspecified ? "border-accent bg-tint text-accent" : "border-borderblue bg-card text-muted"}`}
         >
           시간 미정
         </button>

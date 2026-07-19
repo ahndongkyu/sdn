@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CalendarDays, X } from "lucide-react";
+import { X } from "lucide-react";
 import { createMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { PlaceSearch } from "@/components/match/place-search";
 import { MatchTimeField } from "@/components/match/match-time-field";
+import { OpponentField } from "@/components/match/opponent-field";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
@@ -33,13 +34,11 @@ export default function NewMatchPage() {
           </div>
         </Field>
 
-        <Field label="상대팀">
-          <input name="opponent" required placeholder="번개FC (자체전이면 홍/백 등)" className="input" />
-        </Field>
+        <OpponentField />
 
         <section className="rounded-[18px] border border-borderblue bg-card p-3.5 soft-card">
           <div className="mb-3 flex items-center gap-1.5 text-[15px] font-bold text-fg">
-            <CalendarDays size={17} className="text-accent" /> 일정
+            일정
           </div>
           <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2.5">
             <Field label="날짜">
