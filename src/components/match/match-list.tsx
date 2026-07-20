@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Calendar, Check, ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
-import { formatDateKo, dday } from "@/lib/format";
+import { formatDateKo, dday, matchCode } from "@/lib/format";
 import type { MatchRow } from "@/lib/data/matches";
+import { MatchCode } from "@/components/match/match-code";
 
 const INITIAL_VISIBLE_MONTHS = 3;
 
@@ -130,7 +131,7 @@ export function MatchList({
             <span className="text-[11px] text-subtle">{upcoming.length}경기</span>
           </div>
           <div className="space-y-2">
-            {upcoming.map((m, index) => <UpcomingRow key={m.id} match={m} featured={index === 0} />)}
+            {upcoming.map((m, index) => <UpcomingRow key={m.id} match={m} code={matchCode(matches, m)} featured={index === 0} />)}
           </div>
         </section>
       )}
@@ -205,7 +206,7 @@ export function MatchList({
   );
 }
 
-function UpcomingRow({ match: m, featured }: { match: MatchRow; featured: boolean }) {
+function UpcomingRow({ match: m, code, featured }: { match: MatchRow; code: string; featured: boolean }) {
   const date = formatDateKo(m.match_date);
   const day = Number(m.match_date.slice(8, 10));
   const title = m.type === "self" ? "자체전" : `vs ${m.opponent}`;
@@ -222,6 +223,8 @@ function UpcomingRow({ match: m, featured }: { match: MatchRow; featured: boolea
           <div className="mt-1 flex items-center gap-1 text-[11px] text-subtle">
             <Calendar size={11} />
             <span>{m.match_time ?? "시간 미정"}</span>
+            <span>·</span>
+            <MatchCode>{code}</MatchCode>
             {m.place && <><span>·</span><span className="truncate">{m.place}</span></>}
           </div>
         </div>
@@ -234,9 +237,12 @@ function UpcomingRow({ match: m, featured }: { match: MatchRow; featured: boolea
   return (
     <Link href={`/matches/${m.id}`} className="next-match-card tap block min-h-[148px] p-4.5">
       <div className="flex items-start justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-[10.5px] font-extrabold text-white btn-glow">
-          다음 경기
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-[10.5px] font-extrabold text-white btn-glow">
+            다음 경기
+          </span>
+          <MatchCode>{code}</MatchCode>
+        </div>
         <span className="rounded-full border border-borderblue bg-card/80 px-3 py-1 text-[12px] font-extrabold text-accent backdrop-blur-sm">
           {dday(m.match_date)}
         </span>

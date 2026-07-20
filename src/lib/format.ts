@@ -16,6 +16,18 @@ export function dday(iso: string, today = new Date()) {
   return diff > 0 ? `D-${diff}` : `${-diff}일 전`;
 }
 
+type SeasonMatch = { id: string; match_date: string; created_at: string };
+
+// 시즌 내 경기 날짜순 번호. 같은 날짜의 경기는 등록 순서로 고정한다.
+export function matchCode(matches: SeasonMatch[], match: SeasonMatch) {
+  const year = match.match_date.slice(0, 4);
+  const seasonMatches = matches
+    .filter((item) => item.match_date.slice(0, 4) === year)
+    .sort((a, b) => a.match_date.localeCompare(b.match_date) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+  const order = seasonMatches.findIndex((item) => item.id === match.id) + 1;
+  return `${year.slice(2)}년${String(order).padStart(2, "0")}차`;
+}
+
 // 주소 → 지역 라벨 (도·도로명·번지 제외, 시/군/구/동 단위까지). 예: "경기 안산시 상록구 시낭로 45" → "안산시 상록구"
 const SIDO = [
   "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",

@@ -7,10 +7,11 @@ import { getFormation } from "@/lib/data/formations";
 import { getMyProfile } from "@/lib/data/auth";
 import { getNotifications } from "@/lib/data/notifications";
 import { getMatchWeather } from "@/lib/weather";
-import { formatDateKo, dday, regionLabel } from "@/lib/format";
+import { formatDateKo, dday, matchCode, regionLabel } from "@/lib/format";
 import { NextMatchActions } from "@/components/match/next-match-actions";
 import { VideoButton } from "@/components/match/video-button";
 import { PlaceCopy } from "@/components/match/place-copy";
+import { MatchCode } from "@/components/match/match-code";
 import { BellButton } from "@/components/layout/bell-button";
 
 export default async function HomePage() {
@@ -23,6 +24,7 @@ export default async function HomePage() {
 
   const upcoming = matches.filter((m) => !isPast(m)).sort((a, b) => a.match_date.localeCompare(b.match_date));
   const next = upcoming[0] ?? null;
+  const nextCode = next ? matchCode(matches, next) : null;
   const last = matches.filter((match) => isPast(match) && match.status !== "cancelled")[0] ?? null;
 
   // 날씨는 외부 API라 Suspense로 분리 스트리밍 (홈 렌더를 막지 않음)
@@ -94,7 +96,10 @@ export default async function HomePage() {
       {next ? (
         <section className="rounded-[20px] border border-line bg-card p-4 soft-card">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[12.5px] font-bold text-subtle">다음 경기</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[12.5px] font-bold text-subtle">다음 경기</span>
+              <MatchCode>{nextCode}</MatchCode>
+            </div>
             <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white btn-glow">{dday(next.match_date)}</span>
           </div>
           <Link href={`/matches/${next.id}`} className={`block ${next.place_address || next.place ? "" : "mb-3.5"}`}>

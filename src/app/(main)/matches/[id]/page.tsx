@@ -1,27 +1,29 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle, ChevronRight } from "lucide-react";
-import { getCancelReasonLabel, getMatch, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
+import { getCancelReasonLabel, getMatch, getMatches, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
 import { getGuests } from "@/lib/data/guests";
 import { getMyProfile } from "@/lib/data/auth";
-import { formatDateKo } from "@/lib/format";
+import { formatDateKo, matchCode } from "@/lib/format";
 import { POSITION_BADGE } from "@/lib/mock";
 import { RsvpButtons } from "@/components/match/rsvp-buttons";
 import { VideoButton } from "@/components/match/video-button";
 import { ParticipantVoteGrid } from "@/components/match/participant-vote-grid";
+import { MatchCode } from "@/components/match/match-code";
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const [attendances, goals, members, profile] = await Promise.all([
+  const [attendances, goals, members, profile, matches] = await Promise.all([
     getMatchAttendances(id),
     getMatchGoals(id),
     getMembers(),
     getMyProfile(),
+    getMatches(),
   ]);
   const myMemberId = (profile?.member_id as string | null) ?? null;
   const role = (profile?.members as { role?: string } | null)?.role;
@@ -36,6 +38,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const nameOf = new Map(members.map((m) => [m.id, m.name]));
   const past = isPast(match);
   const d = formatDateKo(match.match_date);
+  const code = matchCode(matches, match);
 
   const going = attendances.filter((a) => a.status === "going");
   const counts = {
@@ -86,7 +89,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {/* 스코어 + 득점 기록 통합 카드 */}
       <section className="rounded-2xl border border-line bg-card soft-card p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-[12px] text-subtle">{match.type === "self" ? "자체전" : "정규 매치"}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] text-subtle">{match.type === "self" ? "자체전" : "정규 매치"}</span>
+            <MatchCode>{code}</MatchCode>
+          </div>
           {cancelled ? (
             <span className="rounded-full border border-danger/60 bg-danger/[0.06] px-2.5 py-0.5 text-[11px] font-bold text-danger">경기 취소</span>
           ) : past && match.score_for !== null && (

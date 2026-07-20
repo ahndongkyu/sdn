@@ -3,6 +3,7 @@ import type { Position } from "@/lib/mock";
 
 export type MatchRow = {
   id: string;
+  created_at: string;
   opponent: string;
   match_date: string;
   match_time: string | null;
@@ -45,7 +46,7 @@ export async function getMatches(): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id")
+    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id")
     .order("match_date", { ascending: false });
   if (error) {
     console.error("getMatches", error);
@@ -58,7 +59,7 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close")
+    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close")
     .eq("id", id)
     .maybeSingle();
   return (data as MatchRow) ?? null;
