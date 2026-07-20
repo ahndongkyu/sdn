@@ -7,6 +7,7 @@ export type Weather = {
   precip: number;
   wind: number; // m/s
   hour: number;
+  code: number;
 };
 
 export async function getMatchWeather(
@@ -17,7 +18,7 @@ export async function getMatchWeather(
 ): Promise<Weather | null> {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&hourly=temperature_2m,apparent_temperature,precipitation_probability,wind_speed_10m` +
+    `&hourly=temperature_2m,apparent_temperature,precipitation_probability,wind_speed_10m,weather_code` +
     `&wind_speed_unit=ms&timezone=Asia%2FSeoul&start_date=${dateIso}&end_date=${dateIso}`;
 
   try {
@@ -46,6 +47,7 @@ export async function getMatchWeather(
       precip: Math.round(data.hourly.precipitation_probability[idx]),
       wind: Math.round(data.hourly.wind_speed_10m[idx]),
       hour,
+      code: Number(data.hourly.weather_code?.[idx] ?? 0),
     };
   } catch {
     return null;

@@ -223,6 +223,17 @@ body {
   appearance: none;
 }
 
+@keyframes sdn-update-attention {
+  0%, 100% { transform: scale(1); box-shadow: 0 5px 12px -6px rgba(85, 214, 182, 0.8); }
+  50% { transform: scale(1.045); box-shadow: 0 0 0 4px rgba(85, 214, 182, 0.18), 0 0 20px rgba(85, 214, 182, 0.34); }
+}
+
+.update-attention { animation: sdn-update-attention 1.25s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .update-attention { animation: none; }
+}
+
 /* ===== 효과 클래스 ===== */
 /* 히어로(시즌 성적) 카드 — 딥네이비 그라데이션 + 우상단 글로우 */
 .hero-card {

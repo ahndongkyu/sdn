@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Cloud, MoonStar, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
+import { Calendar, MapPin, Cloud, CloudFog, CloudLightning, CloudRain, CloudSun, MoonStar, Snowflake, Sun, Droplet, Wind, Play, ClipboardList } from "lucide-react";
 import { getMatches, getMyAttendance, getTeamStats, isPast } from "@/lib/data/matches";
 import { getMemberStat } from "@/lib/data/stats";
 import { getFormation } from "@/lib/data/formations";
@@ -73,6 +73,23 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* 내 기록 — 회원 계정 연결 시에만 노출 */}
+      {myStat && (
+        <Link href={`/stats?season=${season}`} className="relative block overflow-hidden rounded-[18px] border border-borderblue bg-card px-3.5 py-3.5 soft-card">
+          <span className="absolute inset-x-0 top-0 h-[3px] bg-accent" aria-hidden />
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[13px] font-extrabold text-fg">내 기록</span>
+            <span className="text-[10.5px] font-medium text-subtle">{season} 시즌</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            <PersonalStat value={myStat.games} label="경기" />
+            <PersonalStat value={myStat.goals} label="득점" />
+            <PersonalStat value={myStat.assists} label="도움" />
+            <PersonalStat value={`${myStat.attendRate}%`} label="출석" accent />
+          </div>
+        </Link>
+      )}
+
       {/* 다음 경기 */}
       {next ? (
         <section className="rounded-[20px] border border-line bg-card p-4 soft-card">
@@ -112,23 +129,6 @@ export default async function HomePage() {
             <div className="mt-0.5 text-[12px] text-subtle">운영진이 경기를 등록하면 여기 표시됩니다</div>
           </div>
         </section>
-      )}
-
-      {/* 내 기록 — 회원 계정 연결 시에만 노출 */}
-      {myStat && (
-        <Link href={`/stats?season=${season}`} className="relative block overflow-hidden rounded-[18px] border border-borderblue bg-card px-3.5 py-3.5 soft-card">
-          <span className="absolute inset-x-0 top-0 h-[3px] bg-accent" aria-hidden />
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[13px] font-extrabold text-fg">내 기록</span>
-            <span className="text-[10.5px] font-medium text-subtle">{season} 시즌</span>
-          </div>
-          <div className="grid grid-cols-4 gap-1">
-            <PersonalStat value={myStat.games} label="경기" />
-            <PersonalStat value={myStat.goals} label="득점" />
-            <PersonalStat value={myStat.assists} label="도움" />
-            <PersonalStat value={`${myStat.attendRate}%`} label="출석" accent />
-          </div>
-        </Link>
       )}
 
       {/* 경기 날씨 (외부 API — 스트리밍) */}
@@ -227,7 +227,7 @@ async function WeatherCard({ date, time, lat, lng, region }: { date: string; tim
       {weather ? (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {weather.hour >= 19 || weather.hour < 6 ? <MoonStar size={36} className="text-pos-gk" /> : <Sun size={36} className="text-pos-gk" />}
+            <WeatherIcon code={weather.code} hour={weather.hour} />
             <div>
               <div className="text-[28px] font-bold leading-none text-fg">{weather.temp}°</div>
               <div className="mt-1 text-xs text-muted">체감 {weather.feels}°</div>
@@ -243,6 +243,17 @@ async function WeatherCard({ date, time, lat, lng, region }: { date: string; tim
       )}
     </WeatherShell>
   );
+}
+
+function WeatherIcon({ code, hour }: { code: number; hour: number }) {
+  const className = "text-pos-gk";
+  if (code >= 95) return <CloudLightning size={36} className={className} />;
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return <CloudRain size={36} className={className} />;
+  if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return <Snowflake size={34} className={className} />;
+  if (code === 45 || code === 48) return <CloudFog size={36} className={className} />;
+  if (code === 1 || code === 2) return <CloudSun size={36} className={className} />;
+  if (code === 3) return <Cloud size={36} className={className} />;
+  return hour >= 19 || hour < 6 ? <MoonStar size={36} className={className} /> : <Sun size={36} className={className} />;
 }
 
 function WeatherSkeleton({ region }: { region: string | null }) {
