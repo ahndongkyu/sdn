@@ -7,9 +7,7 @@ import { appVersion } from "@/lib/app-version";
 type UpdateState = "idle" | "updating" | "complete";
 
 const DISMISSED_KEY = "sdn-dismissed-update-version";
-const PREVIEW_DISMISSED_KEY = "sdn-dismissed-update-preview";
 const CHECK_INTERVAL = 15 * 60 * 1000;
-const SHOW_UPDATE_PREVIEW = true;
 
 export function AppUpdateBanner() {
   const [availableVersion, setAvailableVersion] = useState<string | null>(null);
@@ -23,9 +21,9 @@ export function AppUpdateBanner() {
       if (!res.ok) return;
       const { version } = (await res.json()) as { version?: string };
       if (!version) return;
-      const hasUpdate = version !== appVersion && sessionStorage.getItem(DISMISSED_KEY) !== version;
-      const isPreview = SHOW_UPDATE_PREVIEW && !sessionStorage.getItem(PREVIEW_DISMISSED_KEY);
-      if (hasUpdate || isPreview) setAvailableVersion(version);
+      if (version !== appVersion && sessionStorage.getItem(DISMISSED_KEY) !== version) {
+        setAvailableVersion(version);
+      }
     } catch {
       // 업데이트 확인 실패는 현재 앱 사용에 영향을 주지 않는다.
     }
@@ -59,13 +57,11 @@ export function AppUpdateBanner() {
     }
 
     setState("complete");
-    sessionStorage.setItem(PREVIEW_DISMISSED_KEY, "true");
     window.setTimeout(() => window.location.reload(), 320);
   }
 
   function dismiss() {
     if (availableVersion) sessionStorage.setItem(DISMISSED_KEY, availableVersion);
-    if (SHOW_UPDATE_PREVIEW) sessionStorage.setItem(PREVIEW_DISMISSED_KEY, "true");
     setAvailableVersion(null);
   }
 
