@@ -4,9 +4,10 @@ import { useState } from "react";
 
 const UNSPECIFIED_OPPONENT = "상대팀 미정";
 
-export function OpponentField() {
-  const [opponent, setOpponent] = useState("");
-  const [unspecified, setUnspecified] = useState(false);
+export function OpponentField({ defaultOpponent = "" }: { defaultOpponent?: string }) {
+  const initiallyUnspecified = defaultOpponent === UNSPECIFIED_OPPONENT;
+  const [opponent, setOpponent] = useState(initiallyUnspecified ? "" : defaultOpponent);
+  const [unspecified, setUnspecified] = useState(initiallyUnspecified);
   const value = unspecified ? UNSPECIFIED_OPPONENT : opponent;
 
   return (

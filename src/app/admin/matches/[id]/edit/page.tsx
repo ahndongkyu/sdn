@@ -6,6 +6,8 @@ import { updateMatch, deleteMatch } from "@/lib/actions/matches";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { PlaceSearch } from "@/components/match/place-search";
 import { CancelMatchButton } from "@/components/match/cancel-match-button";
+import { MatchTimeField } from "@/components/match/match-time-field";
+import { OpponentField } from "@/components/match/opponent-field";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
@@ -16,45 +18,46 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
 
   return (
     <div>
-      <div className="mb-5 flex items-center gap-2">
-        <Link href={`/matches/${id}`}>
-          <X size={20} className="text-muted" />
+      <div className="mb-6 flex items-center gap-2">
+        <Link href={`/matches/${id}`} aria-label="경기 수정 취소" className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-sunken">
+          <X size={19} />
         </Link>
-        <h1 className="text-[15px] font-medium">경기 수정</h1>
+        <h1 className="text-[17px] font-bold text-fg">경기 수정</h1>
       </div>
 
-      <form id="match-edit-form" action={updateMatch} className="space-y-4">
+      <form id="match-edit-form" action={updateMatch} className="space-y-5">
         <input type="hidden" name="id" value={id} />
 
         <Field label="경기 유형">
-          <div className="flex gap-1.5">
+          <div className="flex rounded-[13px] border border-borderblue bg-card p-1 soft-card">
             <label className="flex-1">
               <input type="radio" name="type" value="match" defaultChecked={match.type === "match"} className="peer hidden" />
-              <span className="block rounded-lg border border-line bg-card py-2.5 text-center text-[13px] text-muted peer-checked:border-navy peer-checked:bg-navy peer-checked:text-white">매치</span>
+              <span className="block rounded-[9px] py-2.5 text-center text-[13px] font-semibold text-muted transition-colors peer-checked:bg-navy peer-checked:text-white">매치</span>
             </label>
             <label className="flex-1">
               <input type="radio" name="type" value="self" defaultChecked={match.type === "self"} className="peer hidden" />
-              <span className="block rounded-lg border border-line bg-card py-2.5 text-center text-[13px] text-muted peer-checked:border-navy peer-checked:bg-navy peer-checked:text-white">자체전</span>
+              <span className="block rounded-[9px] py-2.5 text-center text-[13px] font-semibold text-muted transition-colors peer-checked:bg-navy peer-checked:text-white">자체전</span>
             </label>
           </div>
         </Field>
 
-        <Field label="상대팀">
-          <input name="opponent" required defaultValue={match.opponent} className="input" />
-        </Field>
+        <OpponentField defaultOpponent={match.opponent} />
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <Field label="날짜">
-            <input name="match_date" type="date" required defaultValue={match.match_date} className="input" />
-          </Field>
-          <Field label="시간">
-            <input name="match_time" type="time" defaultValue={match.match_time ?? "21:00"} className="input" />
-          </Field>
-        </div>
+        <section className="rounded-[18px] border border-borderblue bg-card p-3.5 soft-card">
+          <div className="mb-3 text-[15px] font-bold text-fg">일정</div>
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-2">
+              <label htmlFor="match-date" className="text-[11.5px] font-semibold text-muted">날짜</label>
+              <input id="match-date" name="match_date" type="date" required defaultValue={match.match_date} className="input schedule-native-input font-medium tabular-nums" />
+            </div>
+            <div className="grid grid-cols-[36px_minmax(0,1fr)] items-center gap-2">
+              <span className="text-[11.5px] font-semibold text-muted">시간</span>
+              <MatchTimeField defaultTime={match.match_time} />
+            </div>
+          </div>
+        </section>
 
-        <Field label="장소 (검색 · 선택 시 주소·좌표 자동)">
-          <PlaceSearch defaultPlace={match.place ?? ""} defaultAddress={match.place_address ?? ""} defaultLat={match.place_lat} defaultLng={match.place_lng} />
-        </Field>
+        <PlaceSearch defaultPlace={match.place ?? ""} defaultAddress={match.place_address ?? ""} defaultLat={match.place_lat} defaultLng={match.place_lng} allowUnspecified variant="section" />
 
         <Field label="유니폼">
           <select name="uniform" defaultValue={match.uniform ?? ""} className="input">
@@ -65,7 +68,7 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           </select>
         </Field>
 
-        <Field label="유튜브 영상 URL">
+        <Field label="유튜브 영상 URL (선택)">
           <input name="youtube_url" type="url" defaultValue={match.youtube_url ?? ""} placeholder="https://youtu.be/..." className="input" />
         </Field>
       </form>
@@ -88,8 +91,8 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <div className="mb-1.5 text-xs text-muted">{label}</div>
+    <div className="min-w-0">
+      <div className="mb-1.5 text-[11.5px] font-semibold text-muted">{label}</div>
       {children}
     </div>
   );

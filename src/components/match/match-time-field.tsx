@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 
-export function MatchTimeField() {
-  const [time, setTime] = useState("08:00");
-  const [unspecified, setUnspecified] = useState(false);
+export function MatchTimeField({ defaultTime }: { defaultTime?: string | null }) {
+  const [time, setTime] = useState(defaultTime || "08:00");
+  const [unspecified, setUnspecified] = useState(!defaultTime);
 
   return (
     <div className="min-w-0">

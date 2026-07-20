@@ -43,7 +43,7 @@ export function PlaceSearch({
     defaultLat != null && defaultLng != null ? { lat: defaultLat, lng: defaultLng } : null,
   );
   const [geo, setGeo] = useState<"idle" | "loading" | "done" | "fail">(defaultLat != null ? "done" : "idle");
-  const [unspecified, setUnspecified] = useState(false);
+  const [unspecified, setUnspecified] = useState(allowUnspecified && !defaultPlace && !defaultAddress);
 
   async function search() {
     try {
