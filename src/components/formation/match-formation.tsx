@@ -2,10 +2,10 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, UserPlus, UserMinus, RotateCcw, Check, Share2, ChevronDown, Search } from "lucide-react";
+import { Plus, UserPlus, UserMinus, RotateCcw, Check, Share2, ChevronDown, Search } from "lucide-react";
 import { toPng } from "html-to-image";
 import { POSITION_COLOR, type Position } from "@/lib/mock";
-import { saveFormation } from "@/lib/actions/formations";
+import { publishFormation, saveFormation } from "@/lib/actions/formations";
 import { setAttendanceFor } from "@/lib/actions/matches";
 import type { FormationLayout } from "@/lib/data/formations";
 import { toast } from "@/lib/toast";
@@ -94,13 +94,22 @@ export function MatchFormation({
   const [shareOpen, setShareOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [captureQs, setCaptureQs] = useState<number[] | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const captureRef = useRef<HTMLDivElement>(null);
   const [pendingPlayer, setPendingPlayer] = useState<string | null>(null);
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const pitchRef = useRef<HTMLDivElement>(null);
+  const benchRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
+  const lastObservedLayoutRef = useRef<string | null>(null);
+  const autoSaveTimerRef = useRef<number | null>(null);
+  const saveQueueRef = useRef(Promise.resolve(true));
+  const saveVersionRef = useRef(0);
+  const initializedQuartersRef = useRef(new Set(
+    QUARTERS.filter((q) => (initial?.[q]?.assignments.length ?? 0) > 0),
+  ));
   const [, startAdd] = useTransition();
   const [presetByQ, setPresetByQ] = useState<Record<number, string>>(() => {
     const s: Record<number, string> = {};
@@ -143,11 +152,65 @@ export function MatchFormation({
     benchSort === "low"
       ? [...bench].sort((a, b) => qCount(a.id) - qCount(b.id) || a.name.localeCompare(b.name, "ko"))
       : [...bench].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  const layoutSignature = JSON.stringify({ presetByQ, assignByQ });
+
+  function buildLayout(): FormationLayout {
+    const layout: FormationLayout = {};
+    for (const q of QUARTERS) {
+      layout[q] = {
+        preset: presetByQ[q],
+        assignments: Object.entries(assignByQ[q]).map(([slot, memberId]) => ({ slot: Number(slot), memberId })),
+      };
+    }
+    return layout;
+  }
+
+  function queueSave(layout: FormationLayout) {
+    const version = ++saveVersionRef.current;
+    setSaving(true);
+    const job = saveQueueRef.current
+      .catch(() => false)
+      .then(async () => {
+        const ok = await saveFormation(matchId, layout);
+        if (version === saveVersionRef.current) {
+          setSaving(false);
+          if (ok) setSaved(true);
+          else toast("포메이션을 저장하지 못했어요");
+        }
+        return ok;
+      });
+    saveQueueRef.current = job;
+    return job;
+  }
+
+  function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
+    window.setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+  }
+
+  useEffect(() => {
+    if (!isManager) return;
+    if (lastObservedLayoutRef.current === layoutSignature) return;
+    if (lastObservedLayoutRef.current === null) {
+      lastObservedLayoutRef.current = layoutSignature;
+      return;
+    }
+    lastObservedLayoutRef.current = layoutSignature;
+    const timer = window.setTimeout(() => {
+      autoSaveTimerRef.current = null;
+      void queueSave(buildLayout());
+    }, 800);
+    autoSaveTimerRef.current = timer;
+    return () => {
+      window.clearTimeout(timer);
+      if (autoSaveTimerRef.current === timer) autoSaveTimerRef.current = null;
+    };
+  }, [isManager, layoutSignature]);
 
   function onSlotClick(i: number) {
     if (!isManager) return; // 회원은 보기 전용
     // 선수를 먼저 고른 상태 → 그 자리에 배치 (기존 선수는 밀려나 벤치로)
     if (pendingPlayer) {
+      initializedQuartersRef.current.add(quarter);
       setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [i]: pendingPlayer } }));
       setPendingPlayer(null);
       setSelected(null);
@@ -155,6 +218,7 @@ export function MatchFormation({
     }
     if (assign[i]) {
       // 채워진 자리 탭 → 비우기
+      initializedQuartersRef.current.add(quarter);
       setAssignByQ((s) => {
         const a = { ...s[quarter] };
         delete a[i];
@@ -163,6 +227,7 @@ export function MatchFormation({
       setSelected(null);
     } else {
       setSelected((cur) => (cur === i ? null : i));
+      scrollTo(benchRef);
     }
   }
 
@@ -171,19 +236,23 @@ export function MatchFormation({
     // 자리를 먼저 고른 상태 → 그 자리에 배치
     if (selected !== null && !assign[selected]) {
       const slot = selected;
+      initializedQuartersRef.current.add(quarter);
       setAssignByQ((s) => ({ ...s, [quarter]: { ...s[quarter], [slot]: memberId } }));
       setSelected(null);
       setPendingPlayer(null);
+      scrollTo(pitchRef);
       return;
     }
     // 아니면 이 선수를 '배치 대기'로 (다시 탭하면 해제) → 이후 빈 자리 탭
     setPendingPlayer((cur) => (cur === memberId ? null : memberId));
     setSelected(null);
+    scrollTo(pitchRef);
   }
 
   // 배치된 선수 위치 교환/이동 (드래그앤드롭)
   function moveSlot(from: number, to: number) {
     if (from === to) return;
+    initializedQuartersRef.current.add(quarter);
     setAssignByQ((s) => {
       const a = { ...s[quarter] };
       const fromPid = a[from];
@@ -233,6 +302,7 @@ export function MatchFormation({
   }
 
   function applyPreset(name: string) {
+    initializedQuartersRef.current.add(quarter);
     setPresetByQ((s) => ({ ...s, [quarter]: name }));
     setSelected(null);
   }
@@ -266,33 +336,54 @@ export function MatchFormation({
     });
   }
 
-  async function save() {
-    setSaving(true);
-    const layout: FormationLayout = {};
-    for (const q of QUARTERS) {
-      layout[q] = {
-        preset: presetByQ[q],
-        assignments: Object.entries(assignByQ[q]).map(([slot, memberId]) => ({ slot: Number(slot), memberId })),
-      };
-    }
-    await saveFormation(matchId, layout);
-    setSaving(false);
-    setSaved(true);
-    toast("포메이션이 저장됐어요");
-  }
-
-  // 현재 쿼터 라인업만 비우기 (저장해야 실제 반영)
+  // 현재 쿼터 라인업만 비우기
   function resetQuarter() {
     if (Object.keys(assign).length === 0) return;
     if (!window.confirm(`${quarter}쿼터 라인업을 초기화할까요?`)) return;
+    initializedQuartersRef.current.add(quarter);
     setAssignByQ((s) => ({ ...s, [quarter]: {} }));
     setSelected(null);
-    toast(`${quarter}쿼터 라인업을 비웠어요 · 저장하면 반영돼요`);
+    toast(`${quarter}쿼터 라인업을 비웠어요`);
   }
 
-  function startShare(qs: number[]) {
+  async function startShare(qs: number[]) {
     setShareOpen(false);
+    if (isManager) {
+      if (autoSaveTimerRef.current !== null) {
+        window.clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+      setPublishing(true);
+      const savedNow = await queueSave(buildLayout());
+      if (!savedNow) {
+        setPublishing(false);
+        return;
+      }
+      const published = await publishFormation(matchId);
+      setPublishing(false);
+      if (!published) {
+        toast("라인업 알림을 보내지 못했어요");
+        return;
+      }
+      toast("라인업 알림을 보냈어요");
+    }
     setCaptureQs(qs);
+  }
+
+  function selectQuarter(nextQuarter: number) {
+    if (
+      nextQuarter === quarter + 1
+      && !initializedQuartersRef.current.has(nextQuarter)
+      && Object.keys(assignByQ[nextQuarter]).length === 0
+    ) {
+      const previousQuarter = nextQuarter - 1;
+      initializedQuartersRef.current.add(nextQuarter);
+      setPresetByQ((s) => ({ ...s, [nextQuarter]: s[previousQuarter] }));
+      setAssignByQ((s) => ({ ...s, [nextQuarter]: { ...s[previousQuarter] } }));
+    }
+    setQuarter(nextQuarter);
+    setSelected(null);
+    setPendingPlayer(null);
   }
 
   // captureQs가 정해지면 숨은 캡처 노드를 이미지로 만들어 공유/저장
@@ -329,7 +420,7 @@ export function MatchFormation({
     <div className="space-y-3">
       <div className="flex gap-1.5">
         {QUARTERS.map((q) => (
-          <button key={q} onClick={() => { setQuarter(q); setSelected(null); }} className={`flex-1 rounded-lg py-2 text-[13px] font-medium ${quarter === q ? "bg-navy text-white" : "border border-line bg-card text-muted"}`}>
+          <button key={q} onClick={() => selectQuarter(q)} className={`flex-1 rounded-lg py-2 text-[13px] font-medium ${quarter === q ? "bg-navy text-white" : "border border-line bg-card text-muted"}`}>
             {q}쿼터 <span className="text-[10px] opacity-70">{Object.keys(assignByQ[q]).length}</span>
           </button>
         ))}
@@ -342,11 +433,14 @@ export function MatchFormation({
               <Check size={11} /> 등록됨
             </span>
           )}
+          {isManager && (
+            <span className="shrink-0 text-[10px] text-subtle">{saving ? "저장 중…" : "자동 저장"}</span>
+          )}
           <span className="truncate text-[13px] text-muted">vs {opponent} · {preset} · {filled}/11</span>
         </div>
       </div>
 
-      {/* 액션 — 포메이션(드롭다운) · 초기화 · 공유 · 저장 */}
+      {/* 액션 — 포메이션(드롭다운) · 초기화 · 공유 */}
       <div className="relative flex gap-1.5">
         {isManager && (
           <>
@@ -371,14 +465,9 @@ export function MatchFormation({
             </button>
           </>
         )}
-        <button onClick={() => setShareOpen((v) => !v)} disabled={captureQs != null} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-navy py-2.5 text-[12px] font-medium text-white disabled:opacity-60">
+        <button onClick={() => setShareOpen((v) => !v)} disabled={captureQs != null || publishing} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-navy py-2.5 text-[12px] font-medium text-white disabled:opacity-60">
           <Share2 size={13} /> {captureQs != null ? "생성 중…" : "공유"}
         </button>
-        {isManager && (
-          <button onClick={save} disabled={saving} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-red py-2.5 text-[12px] font-medium text-white disabled:opacity-50">
-            <Save size={13} /> {saved ? "수정 저장" : "저장"}
-          </button>
-        )}
       </div>
 
       {/* 공유 범위 선택 */}
@@ -386,10 +475,10 @@ export function MatchFormation({
         <div className="rounded-xl border border-line bg-card soft-card p-3">
           <div className="mb-2.5 text-center text-[13px] font-medium">무엇을 공유할까요?</div>
           <div className="flex gap-2">
-            <button onClick={() => startShare([quarter])} className="flex-1 rounded-[10px] border border-line bg-card py-2.5 text-center text-[13px] font-medium">
+            <button onClick={() => { void startShare([quarter]); }} disabled={publishing} className="flex-1 rounded-[10px] border border-line bg-card py-2.5 text-center text-[13px] font-medium disabled:opacity-50">
               이번 쿼터만<br /><span className="text-[11px] text-subtle">{quarter}쿼터</span>
             </button>
-            <button onClick={() => startShare(QUARTERS)} className="flex-1 rounded-[10px] bg-navy py-2.5 text-center text-[13px] font-medium text-white">
+            <button onClick={() => { void startShare(QUARTERS); }} disabled={publishing} className="flex-1 rounded-[10px] bg-navy py-2.5 text-center text-[13px] font-medium text-white disabled:opacity-50">
               전체 쿼터<br /><span className="text-[11px] text-white/70">1~4쿼터 한 장</span>
             </button>
           </div>
@@ -461,7 +550,7 @@ export function MatchFormation({
 
       {/* 벤치 (운영진만 편집) */}
       {isManager && (
-      <div className="rounded-xl border border-divider bg-card soft-card p-3">
+      <div ref={benchRef} className="rounded-xl border border-divider bg-card soft-card p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="text-[12px] text-muted">
             {pendingPlayer ? (
