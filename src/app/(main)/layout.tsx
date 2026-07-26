@@ -14,6 +14,8 @@ export default async function MainLayout({
   const profile = await getMyProfile();
   if (!profile) redirect("/login"); // 비로그인
   if (!profile.member_id) redirect("/pending"); // 로그인했으나 승인 전
+  const member = profile.members as { status?: string } | null;
+  if (member?.status !== "active") redirect("/inactive");
 
   return (
     <div className="app-shell flex flex-col">

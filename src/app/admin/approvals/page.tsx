@@ -11,9 +11,12 @@ export default async function ApprovalsPage() {
     getLinkedMemberIds(),
   ]);
 
-  const unlinked = members
-    .filter((m) => !linked.has(m.id))
-    .map((m) => ({ id: m.id, name: m.name, position1: m.position1 }));
+  const approvalMembers = members.map((m) => ({
+    id: m.id,
+    name: m.name,
+    position1: m.position1,
+    linked: linked.has(m.id),
+  }));
 
   return (
     <div className="space-y-4">
@@ -35,7 +38,7 @@ export default async function ApprovalsPage() {
       ) : (
         <div className="space-y-2.5">
           {pending.map((p) => (
-            <ApprovalRow key={p.id} profile={p} members={unlinked} />
+            <ApprovalRow key={p.id} profile={p} members={approvalMembers} />
           ))}
         </div>
       )}

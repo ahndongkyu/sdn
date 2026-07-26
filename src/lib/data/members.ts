@@ -32,6 +32,7 @@ export async function getMemberById(id: string): Promise<MemberRow | null> {
     .from("members")
     .select("id, name, nickname, position1, position2, role, title, member_numbers(uniform, number)")
     .eq("id", id)
+    .eq("status", "active")
     .maybeSingle();
   return (data as MemberRow) ?? null;
 }

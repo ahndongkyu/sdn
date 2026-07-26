@@ -1,10 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { X } from "lucide-react";
 import { createMember } from "@/lib/actions/members";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { PositionSelect } from "@/components/member/position-select";
+import { isAdmin, isManager } from "@/lib/data/auth";
 
-export default function NewMemberPage() {
+export default async function NewMemberPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const [manager, admin] = await Promise.all([isManager(), isAdmin()]);
+  if (!manager) redirect("/admin/members");
+  const { error } = await searchParams;
+
   return (
     <div>
       <div className="mb-5 flex items-center gap-2">
@@ -13,6 +19,12 @@ export default function NewMemberPage() {
         </Link>
         <h1 className="text-[15px] font-medium">회원 등록</h1>
       </div>
+
+      {error === "duplicate" && (
+        <p className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">
+          같은 이름의 활성 회원이 이미 있어요. 가입 승인에서 기존 회원 연결을 먼저 확인해주세요.
+        </p>
+      )}
 
       <form action={createMember} className="space-y-4">
         <Field label="이름">
@@ -28,9 +40,11 @@ export default function NewMemberPage() {
           </div>
         </Field>
 
-        <Field label="권한">
-          <Select name="role" options={[{ v: "member", label: "회원" }, { v: "manager", label: "운영진" }]} />
-        </Field>
+        {admin && (
+          <Field label="권한">
+            <Select name="role" options={[{ v: "member", label: "회원" }, { v: "manager", label: "운영진" }]} />
+          </Field>
+        )}
 
         <ConfirmSubmit message="이 회원을 등록하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">
           회원 등록

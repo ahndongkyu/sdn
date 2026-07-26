@@ -12,14 +12,30 @@ export async function voteMvp(matchId: string, targetId: string) {
 
   const supabase = await createClient();
 
-  // 본인이 그 경기에 참석(going) 했는지 확인 — 참석자만 투표 가능
-  const { data: myAttendance } = await supabase
-    .from("attendances")
-    .select("status")
-    .eq("match_id", matchId)
-    .eq("member_id", voterId)
-    .maybeSingle();
+  // 본인·투표 대상 모두 참석자여야 하며, 결과 입력 후 마감 전인 경기만 투표할 수 있다.
+  const [{ data: myAttendance }, { data: targetAttendance }, { data: match }] = await Promise.all([
+    supabase
+      .from("attendances")
+      .select("status")
+      .eq("match_id", matchId)
+      .eq("member_id", voterId)
+      .maybeSingle(),
+    supabase
+      .from("attendances")
+      .select("status")
+      .eq("match_id", matchId)
+      .eq("member_id", targetId)
+      .maybeSingle(),
+    supabase
+      .from("matches")
+      .select("score_for, status, mom_vote_close")
+      .eq("id", matchId)
+      .maybeSingle(),
+  ]);
   if (myAttendance?.status !== "going") return;
+  if (targetAttendance?.status !== "going") return;
+  if (!match || match.status === "cancelled" || match.score_for === null || !match.mom_vote_close) return;
+  if (new Date(match.mom_vote_close).getTime() <= Date.now()) return;
 
   await supabase
     .from("mvp_votes")

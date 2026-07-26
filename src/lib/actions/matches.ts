@@ -144,12 +144,27 @@ export async function cancelMatch(formData: FormData) {
   redirect(`/matches/${id}?toast=${encodeURIComponent("경기가 취소 처리됐어요")}`);
 }
 
-// 매치 삭제 (운영진)
+// 매치 삭제 (운영진) — 관련 기록이 생긴 경기는 삭제하지 않고 취소로 보존한다.
 export async function deleteMatch(formData: FormData) {
   if (!(await isManager())) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
+
+  const recordChecks = await Promise.all([
+    supabase.from("attendances").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("goals").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("formations").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("mvp_votes").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("guests").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("match_comments").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("comments").select("id", { count: "exact", head: true }).eq("match_id", id),
+    supabase.from("attend_comments").select("id", { count: "exact", head: true }).eq("match_id", id),
+  ]);
+  if (recordChecks.some(({ count, error }) => error || (count ?? 0) > 0)) {
+    redirect(`/admin/matches/${id}/edit?error=has_records`);
+  }
+
   await supabase.from("matches").delete().eq("id", id);
   await supabase.from("notification_events").delete().eq("reference_id", id);
   revalidatePath("/matches");

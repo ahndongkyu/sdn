@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/data/auth";
 import { sendPushToManagers } from "@/lib/push";
 
+type ApprovalResult = { ok: true; message: string } | { ok: false; message: string };
+
 const toNum = (v: FormDataEntryValue | null): number | null => {
   const n = parseInt(String(v ?? "").trim(), 10);
   return Number.isNaN(n) ? null : n;
@@ -22,6 +24,8 @@ export async function submitClaimName(formData: FormData) {
     claimed_position2: String(formData.get("position2") ?? "").trim() || null,
     claimed_num_red: toNum(formData.get("num_red")),
     claimed_num_blue: toNum(formData.get("num_blue")),
+    // 거절된 신청자가 다시 제출하면 승인 대기 상태로 되돌린다.
+    signup_rejected_at: null,
   }).eq("id", user.id);
   await supabase.rpc("record_signup_notification");
   // 운영진·관리자에게 가입 신청 알림 푸시
@@ -37,55 +41,55 @@ export async function submitClaimName(formData: FormData) {
 }
 
 // 승인(신규): 신청 정보로 새 회원 생성 + 계정 연결
-export async function createMemberFromSignup(profileId: string) {
-  if (!(await isManager())) return;
-  if (!profileId) return;
+export async function createMemberFromSignup(profileId: string, allowSameName = false): Promise<ApprovalResult> {
+  if (!(await isManager())) return { ok: false, message: "운영진만 가입을 승인할 수 있어요." };
+  if (!profileId) return { ok: false, message: "가입 신청 정보를 찾을 수 없어요." };
   const supabase = await createClient();
-  const { data: p } = await supabase
-    .from("profiles")
-    .select("claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue")
-    .eq("id", profileId)
-    .single();
-  const prof = p as {
-    claimed_name?: string | null;
-    claimed_position1?: string | null;
-    claimed_position2?: string | null;
-    claimed_num_red?: number | null;
-    claimed_num_blue?: number | null;
-  } | null;
-  if (!prof?.claimed_name) return;
+  const { error } = await supabase.rpc("approve_signup_as_new_member", {
+    p_profile_id: profileId,
+    p_allow_same_name: allowSameName,
+  });
+  if (error) return { ok: false, message: error.message || "신규 회원 등록에 실패했어요." };
 
-  const { data: member } = await supabase
-    .from("members")
-    .insert({
-      name: prof.claimed_name,
-      position1: prof.claimed_position1 || "MF",
-      position2: prof.claimed_position2 || null,
-      role: "member",
-    })
-    .select("id")
-    .single();
-  if (!member) return;
-
-  const nums: { member_id: string; uniform: string; number: number }[] = [];
-  if (prof.claimed_num_red != null) nums.push({ member_id: member.id, uniform: "빨검", number: prof.claimed_num_red });
-  if (prof.claimed_num_blue != null) nums.push({ member_id: member.id, uniform: "파랑", number: prof.claimed_num_blue });
-  if (nums.length) await supabase.from("member_numbers").insert(nums);
-
-  await supabase.from("profiles").update({ member_id: member.id }).eq("id", profileId);
   revalidatePath("/admin/approvals");
   revalidatePath("/members");
   revalidatePath("/more");
+  return { ok: true, message: "신규 회원으로 등록하고 계정을 연결했어요." };
 }
 
 // 승인: 대기 프로필을 로스터 회원과 연결
-export async function linkProfile(profileId: string, memberId: string) {
-  if (!(await isManager())) return;
-  if (!profileId || !memberId) return;
+export async function linkProfile(profileId: string, memberId: string): Promise<ApprovalResult> {
+  if (!(await isManager())) return { ok: false, message: "운영진만 가입을 승인할 수 있어요." };
+  if (!profileId || !memberId) return { ok: false, message: "연결할 회원을 선택해주세요." };
 
   const supabase = await createClient();
-  await supabase.from("profiles").update({ member_id: memberId }).eq("id", profileId);
+  const { error } = await supabase.rpc("link_pending_profile", {
+    p_profile_id: profileId,
+    p_member_id: memberId,
+  });
+  if (error) return { ok: false, message: error.message || "계정 연결에 실패했어요." };
 
   revalidatePath("/admin/approvals");
   revalidatePath("/more");
+  revalidatePath("/members");
+  return { ok: true, message: "기존 회원 기록에 카카오 계정을 연결했어요." };
+}
+
+// 가입 신청 거절: 회원은 만들거나 연결하지 않고 대기 목록에서만 제외
+export async function rejectSignup(profileId: string): Promise<ApprovalResult> {
+  if (!(await isManager())) return { ok: false, message: "운영진만 가입을 처리할 수 있어요." };
+  if (!profileId) return { ok: false, message: "가입 신청 정보를 찾을 수 없어요." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ signup_rejected_at: new Date().toISOString() })
+    .eq("id", profileId)
+    .is("member_id", null);
+  if (error) return { ok: false, message: "가입 거절 처리에 실패했어요." };
+
+  revalidatePath("/admin/approvals");
+  revalidatePath("/pending");
+  revalidatePath("/more");
+  return { ok: true, message: "가입 신청을 거절했어요." };
 }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { signOut } from "@/lib/actions/auth";
 import { getMyProfile } from "@/lib/data/auth";
 import { SignupForm } from "@/components/auth/signup-form";
@@ -15,8 +15,10 @@ export default async function PendingPage() {
     claimed_position2?: string | null;
     claimed_num_red?: number | null;
     claimed_num_blue?: number | null;
+    signup_rejected_at?: string | null;
   };
   const claimed = p.claimed_name ?? "";
+  const rejected = !!p.signup_rejected_at;
 
   return (
     <div className="app-shell flex items-center justify-center p-4">
@@ -29,8 +31,10 @@ export default async function PendingPage() {
 
         {claimed && (
           <div className="relative mb-4 flex items-center justify-center gap-1.5 rounded-lg bg-white/[0.06] py-2 text-[12px] text-navy-muted">
-            <Check size={14} className="text-[#5dcaa5]" />
-            <span><b className="text-white">{claimed}</b> 님으로 신청됨 · 승인 대기 중</span>
+            {rejected ? <X size={14} className="text-danger" /> : <Check size={14} className="text-[#5dcaa5]" />}
+            <span>
+              <b className="text-white">{claimed}</b> 님 신청이 {rejected ? "거절됐어요 · 정보를 수정해 다시 신청할 수 있어요" : "승인 대기 중"}
+            </span>
           </div>
         )}
 
@@ -40,11 +44,11 @@ export default async function PendingPage() {
           defaultPos2={p.claimed_position2 ?? ""}
           defaultNumRed={p.claimed_num_red != null ? String(p.claimed_num_red) : ""}
           defaultNumBlue={p.claimed_num_blue != null ? String(p.claimed_num_blue) : ""}
-          submitted={!!claimed}
+          submitted={!!claimed && !rejected}
         />
 
         <div className="relative mt-3 text-center text-[10.5px] leading-relaxed text-navy-soft">
-          명단에 없어도 이 정보로 새로 등록돼요.
+          이름이 기존 명단과 같으면 기존 기록에 연결하고, 명단에 없으면 새 회원으로 등록해요.
         </div>
 
         <form action={signOut} className="relative mt-4 text-center">

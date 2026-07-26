@@ -10,8 +10,8 @@ export default async function AdminLayout({
   if (!profile) redirect("/login");
   if (!profile.member_id) redirect("/pending");
 
-  const member = profile.members as { role?: string } | null;
-  const isManager = member?.role === "manager" || member?.role === "admin";
+  const member = profile.members as { role?: string; status?: string } | null;
+  const isManager = member?.status === "active" && (member.role === "manager" || member.role === "admin");
   if (!isManager) redirect("/"); // 운영진 아니면 차단
 
   return <div className="app-shell min-h-dvh px-4 py-4">{children}</div>;

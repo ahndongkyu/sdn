@@ -19,6 +19,7 @@ export async function getPendingProfiles(): Promise<PendingProfile[]> {
     .from("profiles")
     .select("id, kakao_nickname, claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue, email, created_at")
     .is("member_id", null)
+    .is("signup_rejected_at", null)
     .order("created_at");
   return (data ?? []) as PendingProfile[];
 }
@@ -28,7 +29,8 @@ export async function getPendingCount(): Promise<number> {
   const { count } = await supabase
     .from("profiles")
     .select("id", { count: "exact", head: true })
-    .is("member_id", null);
+    .is("member_id", null)
+    .is("signup_rejected_at", null);
   return count ?? 0;
 }
 

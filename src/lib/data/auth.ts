@@ -20,7 +20,7 @@ export const getMyProfile = cache(async () => {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, email, kakao_nickname, claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue, member_id, members(*)")
+    .select("id, email, kakao_nickname, claimed_name, claimed_position1, claimed_position2, claimed_num_red, claimed_num_blue, signup_rejected_at, member_id, members(*)")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -30,13 +30,15 @@ export const getMyProfile = cache(async () => {
 // 현재 사용자가 운영진(manager/admin)인지
 export const isManager = cache(async () => {
   const profile = await getMyProfile();
-  const role = (profile?.members as { role?: string } | null)?.role;
+  const member = profile?.members as { role?: string; status?: string } | null;
+  const role = member?.status === "active" ? member.role : null;
   return role === "manager" || role === "admin";
 });
 
 // 현재 사용자가 관리자(admin)인지
 export const isAdmin = cache(async () => {
   const profile = await getMyProfile();
-  const role = (profile?.members as { role?: string } | null)?.role;
+  const member = profile?.members as { role?: string; status?: string } | null;
+  const role = member?.status === "active" ? member.role : null;
   return role === "admin";
 });

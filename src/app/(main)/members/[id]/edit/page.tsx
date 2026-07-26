@@ -1,15 +1,22 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { X, Trash2 } from "lucide-react";
+import { X } from "lucide-react";
 import { getMemberById } from "@/lib/data/members";
-import { getMyProfile, isManager } from "@/lib/data/auth";
-import { updateMember, deleteMember } from "@/lib/actions/members";
+import { getMyProfile, isAdmin, isManager } from "@/lib/data/auth";
+import { updateMember, deactivateMember } from "@/lib/actions/members";
 import { ConfirmSubmit } from "@/components/ui/confirm-submit";
 import { PositionSelect } from "@/components/member/position-select";
 
-export default async function EditMemberPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditMemberPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { id } = await params;
-  const [m, profile, manager] = await Promise.all([getMemberById(id), getMyProfile(), isManager()]);
+  const { error } = await searchParams;
+  const [m, profile, manager, admin] = await Promise.all([getMemberById(id), getMyProfile(), isManager(), isAdmin()]);
   if (!m) notFound();
 
   const mine = ((profile?.member_id as string | null) ?? null) === id;
@@ -25,6 +32,17 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
         </Link>
         <h1 className="text-[15px] font-medium">{mine && !manager ? "내 프로필 수정" : "회원 수정"}</h1>
       </div>
+
+      {error === "duplicate" && (
+        <p className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">
+          같은 이름의 활성 회원이 이미 있어요. 이름과 기존 계정 연결 상태를 확인해주세요.
+        </p>
+      )}
+      {error === "deactivate" && (
+        <p className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[12px] text-danger">
+          회원 비활성화에 실패했어요. 마지막 관리자 계정인지 확인해주세요.
+        </p>
+      )}
 
       <form action={updateMember} className="space-y-4">
         <input type="hidden" name="id" value={id} />
@@ -42,7 +60,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
           </div>
         </Field>
 
-        {manager && (
+        {admin && (
           <Field label="권한">
             <select name="role" defaultValue={m.role} className="input">
               <option value="member">회원</option>
@@ -55,11 +73,11 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
         <ConfirmSubmit message="수정 사항을 저장하시겠습니까?" className="btn-glow w-full rounded-[10px] bg-red py-3 text-sm font-medium text-white">수정 저장</ConfirmSubmit>
       </form>
 
-      {manager && (
-        <form action={deleteMember} className="mt-6 border-t border-divider pt-5">
+      {admin && (
+        <form action={deactivateMember} className="mt-6 border-t border-divider pt-5">
           <input type="hidden" name="id" value={id} />
-          <ConfirmSubmit message="이 회원을 삭제하시겠습니까? 되돌릴 수 없어요." className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
-            <Trash2 size={15} /> 이 회원 삭제
+          <ConfirmSubmit message="이 회원을 비활성화하시겠습니까? 일반 목록에는 보이지 않지만 기존 기록은 유지됩니다." className="flex w-full items-center justify-center rounded-[10px] border border-danger/40 py-2.5 text-[13px] text-danger">
+            회원 비활성화
           </ConfirmSubmit>
         </form>
       )}

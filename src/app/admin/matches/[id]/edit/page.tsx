@@ -11,8 +11,15 @@ import { OpponentField } from "@/components/match/opponent-field";
 
 const UNIFORMS = ["빨검", "파랑", "연핑크", "진남색"];
 
-export default async function EditMatchPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditMatchPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { id } = await params;
+  const { error } = await searchParams;
   const match = await getMatch(id);
   if (!match) notFound();
 
@@ -24,6 +31,12 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
         </Link>
         <h1 className="text-[17px] font-bold text-fg">경기 수정</h1>
       </div>
+
+      {error === "has_records" && (
+        <p className="mb-4 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12px] leading-relaxed text-danger">
+          참석·결과·댓글 등 기록이 있는 경기는 삭제할 수 없어요. 경기 취소를 사용하면 기록은 보존되고 집계에서만 제외됩니다.
+        </p>
+      )}
 
       <form id="match-edit-form" action={updateMatch} className="space-y-5">
         <input type="hidden" name="id" value={id} />

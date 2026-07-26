@@ -4,7 +4,9 @@ import { getMyProfile } from "@/lib/data/auth";
 
 export default async function LoginPage() {
   const profile = await getMyProfile();
-  if (profile?.member_id) redirect("/");
+  const member = profile?.members as { status?: string } | null;
+  if (profile?.member_id && member?.status === "active") redirect("/");
+  if (profile?.member_id) redirect("/inactive");
   if (profile) redirect("/pending"); // 로그인했으나 승인 전
 
   return (
