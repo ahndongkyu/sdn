@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Position } from "@/lib/mock";
+export { isPast } from "@/lib/match-status";
 
 export type MatchRow = {
   id: string;
@@ -33,13 +34,13 @@ export type AttendanceRow = {
   } | null;
 };
 
-export function isPast(m: { match_date: string; score_for: number | null; status?: string }) {
-  const today = new Date().toISOString().slice(0, 10);
-  return m.status === "cancelled" || m.score_for !== null || m.match_date < today;
-}
-
 export function getCancelReasonLabel(reason: string | null) {
   return reason?.replace(/으로 취소$/, "") || "경기 취소";
+}
+
+// 서버 렌더링 시점 기준으로 MOM 투표 마감 여부를 계산한다.
+export function isMvpVoteClosed(momVoteClose: string | null, now = Date.now()) {
+  return !momVoteClose || now >= new Date(momVoteClose).getTime();
 }
 
 export async function getMatches(): Promise<MatchRow[]> {

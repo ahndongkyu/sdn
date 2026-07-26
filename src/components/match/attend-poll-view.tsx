@@ -55,7 +55,18 @@ export function AttendPollView({
       return n;
     });
     setMyStatus(v);
-    start(async () => { await setAttendance(matchId, v); });
+    start(async () => {
+      const result = await setAttendance(matchId, v);
+      if (result.ok) return;
+      setCounts((c) => {
+        const n = { ...c };
+        n[v] -= 1;
+        if (myStatus) n[myStatus] += 1;
+        return n;
+      });
+      setMyStatus(myStatus);
+      toast(result.message);
+    });
   }
 
   function submit() {

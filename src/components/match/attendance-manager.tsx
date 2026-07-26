@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { setAttendanceFor } from "@/lib/actions/matches";
 import { type Position } from "@/lib/mock";
 import { Avatar } from "@/components/ui/avatar";
+import { toast } from "@/lib/toast";
 
 type St = "going" | "notGoing" | "undecided";
 type Member = { id: string; name: string; position1: Position };
@@ -37,8 +38,14 @@ export function AttendanceManager({
   }, [statuses, members]);
 
   function set(id: string, s: St) {
+    const previous = statuses[id];
     setStatuses((prev) => ({ ...prev, [id]: s }));
-    start(() => setAttendanceFor(matchId, id, s));
+    start(async () => {
+      const result = await setAttendanceFor(matchId, id, s);
+      if (result.ok) return;
+      setStatuses((prev) => ({ ...prev, [id]: previous }));
+      toast(result.message);
+    });
   }
 
   return (

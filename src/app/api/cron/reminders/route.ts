@@ -29,10 +29,30 @@ export async function GET(request: Request) {
 
   if (!matches || matches.length === 0) return NextResponse.json({ tomorrow, matches: 0, sent: 0 });
 
-  const { data: subs } = await admin.from("push_subscriptions").select("endpoint, p256dh, auth");
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, members(status)")
+    .not("member_id", "is", null);
+  const profileIds = (profiles ?? [])
+    .filter((profile) => {
+      const member = Array.isArray(profile.members) ? profile.members[0] : profile.members;
+      return member?.status === "active";
+    })
+    .map((profile) => profile.id as string);
+  const { data: subs } = profileIds.length
+    ? await admin.from("push_subscriptions").select("endpoint, p256dh, auth").in("profile_id", profileIds)
+    : { data: [] as { endpoint: string; p256dh: string; auth: string }[] };
   const list = (subs ?? []) as { endpoint: string; p256dh: string; auth: string }[];
 
   for (const m of matches) {
+    const { error: deliveryError } = await admin
+      .from("reminder_deliveries")
+      .insert({ match_id: m.id, reminder_date: tomorrow });
+    // 이미 발송한 리마인드는 재실행해도 다시 보내지 않는다.
+    if (deliveryError?.code === "23505") continue;
+    if (deliveryError) {
+      return NextResponse.json({ error: "reminder delivery lock failed" }, { status: 500 });
+    }
     const label = m.type === "self" ? m.opponent : `vs ${m.opponent}`;
     const body = `${label}${m.match_time ? ` · ${m.match_time}` : ""} · 아직 참석 전이라면 알려주세요`;
     await recordNotificationEvent(admin, {

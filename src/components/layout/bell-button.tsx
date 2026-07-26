@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const subscribeToNothing = () => () => {};
 
 export function BellButton({ latestAt }: { latestAt: string | null }) {
-  const [unread, setUnread] = useState(false);
-
-  useEffect(() => {
-    if (!latestAt) return;
+  const unread = useSyncExternalStore(subscribeToNothing, () => {
+    if (!latestAt) return false;
     const seen = localStorage.getItem("sdn_notif_seen");
-    setUnread(!seen || new Date(latestAt).getTime() > new Date(seen).getTime());
-  }, [latestAt]);
+    return !seen || new Date(latestAt).getTime() > new Date(seen).getTime();
+  }, () => false);
 
   return (
     <Link href="/notifications" className="relative" aria-label="알림">

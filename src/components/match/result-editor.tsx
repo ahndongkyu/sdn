@@ -23,12 +23,17 @@ export function ScoreEditor({ matchId, initialFor, initialAgainst }: { matchId: 
       </div>
       <button
         disabled={pending}
-        onClick={() =>
-          start(async () => {
-            await saveScore(matchId, f, a);
-            router.push(`/matches/${matchId}?toast=${encodeURIComponent("결과가 저장됐어요")}`);
-          })
-        }
+        onClick={() => start(async () => {
+          let result = await saveScore(matchId, f, a);
+          if (!result.ok && result.needsConfirmation && window.confirm(result.message)) {
+            result = await saveScore(matchId, f, a, true);
+          }
+          if (!result.ok) {
+            if (!result.needsConfirmation) toast(result.message);
+            return;
+          }
+          router.push(`/matches/${matchId}?toast=${encodeURIComponent(result.message)}`);
+        })}
         className="btn-glow w-full rounded-lg bg-red py-2.5 text-[13px] font-medium disabled:opacity-60"
       >
         스코어 저장하고 완료
@@ -95,8 +100,9 @@ export function GoalAdder({ matchId, pool }: { matchId: string; pool: Pool }) {
       <button
         disabled={pending || (!own && !scorer)}
         onClick={() => start(async () => {
-          await addGoal(matchId, own ? null : scorer, own ? null : assist, own);
-          toast(own ? "자책골이 추가됐어요" : "득점이 추가됐어요");
+          const result = await addGoal(matchId, own ? null : scorer, own ? null : assist, own);
+          toast(result.message);
+          if (!result.ok) return;
           setScorer(null); setAssist(null); setOwn(false);
         })}
         className="w-full rounded-lg bg-navy py-2.5 text-[13px] font-medium text-white disabled:opacity-40"

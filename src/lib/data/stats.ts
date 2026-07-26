@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Position } from "@/lib/mock";
 import { currentSeason } from "@/lib/season";
+import { todayInSeoul } from "@/lib/date";
 
 export type MemberStat = {
   id: string;
@@ -14,17 +15,6 @@ export type MemberStat = {
   attendRate: number; // %
   mvp: number;
 };
-
-function todayInSeoul() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${value("year")}-${value("month")}-${value("day")}`;
-}
 
 export async function getMemberStats(season: number = currentSeason()): Promise<MemberStat[]> {
   const supabase = await createClient();

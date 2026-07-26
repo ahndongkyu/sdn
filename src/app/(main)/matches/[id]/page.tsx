@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle, ChevronRight } from "lucide-react";
-import { getCancelReasonLabel, getMatch, getMatches, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isPast } from "@/lib/data/matches";
+import { getCancelReasonLabel, getMatch, getMatches, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isMvpVoteClosed, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
 import { getGuests } from "@/lib/data/guests";
@@ -67,7 +67,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   // MOM 투표 마감 여부 (결과 입력됨 + 마감시각 지남). 결과·승자는 참가선수 박스에서 표시.
   const hasResult = match.score_for !== null;
-  const voteClosed = hasResult && (!match.mom_vote_close || Date.now() >= new Date(match.mom_vote_close).getTime());
+  const voteClosed = hasResult && isMvpVoteClosed(match.mom_vote_close);
 
   return (
     <div className="space-y-4">

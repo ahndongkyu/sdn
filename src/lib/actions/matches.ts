@@ -4,19 +4,26 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getMyProfile, isManager } from "@/lib/data/auth";
-import { sendPushToAll } from "@/lib/push";
+import { sendPushToAll, sendPushToMembers } from "@/lib/push";
 import { recordNotificationEvent } from "@/lib/notification-events";
+import { todayInSeoul } from "@/lib/date";
+
+type ActionResult = { ok: true; message: string } | { ok: false; message: string };
+
+function matchLabel(type: string, opponent: string) {
+  return type === "self" ? opponent : `vs ${opponent}`;
+}
 
 // 매치 등록 (운영진 — RLS의 is_manager()로 강제)
 export async function createMatch(formData: FormData) {
   if (!(await isManager())) return;
-  const opponent = String(formData.get("opponent") ?? "").trim();
   const match_date = String(formData.get("match_date") ?? "").trim();
+  const matchType = String(formData.get("type") ?? "match");
+  const opponent = String(formData.get("opponent") ?? "").trim() || (matchType === "self" ? "자체전" : "");
   if (!opponent || !match_date) return;
 
   const supabase = await createClient();
   const matchTime = String(formData.get("match_time") ?? "");
-  const matchType = String(formData.get("type") ?? "match");
   const { data: match, error } = await supabase
     .from("matches")
     .insert({
@@ -40,7 +47,7 @@ export async function createMatch(formData: FormData) {
     return;
   }
 
-  const label = matchType === "self" ? opponent : `vs ${opponent}`;
+  const label = matchLabel(matchType, opponent);
   const body = `${match_date}${matchTime ? ` · ${matchTime}` : ""} · 참석 여부를 알려주세요`;
   await recordNotificationEvent(supabase, {
     kind: "match",
@@ -67,26 +74,72 @@ export async function createMatch(formData: FormData) {
 export async function updateMatch(formData: FormData) {
   if (!(await isManager())) return;
   const id = String(formData.get("id") ?? "");
-  const opponent = String(formData.get("opponent") ?? "").trim();
   const match_date = String(formData.get("match_date") ?? "").trim();
+  const type = String(formData.get("type") ?? "match");
+  const opponent = String(formData.get("opponent") ?? "").trim() || (type === "self" ? "자체전" : "");
   if (!id || !opponent || !match_date) return;
 
   const supabase = await createClient();
-  await supabase
+  const { data: before } = await supabase
     .from("matches")
-    .update({
-      opponent,
-      match_date,
-      match_time: String(formData.get("match_time") ?? "") || null,
-      place: String(formData.get("place") ?? "") || null,
-      place_address: String(formData.get("place_address") ?? "") || null,
-      place_lat: formData.get("place_lat") ? Number(formData.get("place_lat")) : null,
-      place_lng: formData.get("place_lng") ? Number(formData.get("place_lng")) : null,
-      type: String(formData.get("type") ?? "match"),
-      uniform: String(formData.get("uniform") ?? "") || null,
-      youtube_url: String(formData.get("youtube_url") ?? "") || null,
-    })
+    .select("opponent, match_date, match_time, place, place_address, type")
+    .eq("id", id)
+    .maybeSingle();
+  if (!before) redirect(`/admin/matches/${id}/edit?error=save`);
+
+  const next = {
+    opponent,
+    match_date,
+    match_time: String(formData.get("match_time") ?? "") || null,
+    place: String(formData.get("place") ?? "") || null,
+    place_address: String(formData.get("place_address") ?? "") || null,
+    place_lat: formData.get("place_lat") ? Number(formData.get("place_lat")) : null,
+    place_lng: formData.get("place_lng") ? Number(formData.get("place_lng")) : null,
+    type,
+    uniform: String(formData.get("uniform") ?? "") || null,
+    youtube_url: String(formData.get("youtube_url") ?? "") || null,
+  };
+  const { error } = await supabase
+    .from("matches")
+    .update(next)
     .eq("id", id);
+  if (error) redirect(`/admin/matches/${id}/edit?error=save`);
+
+  const scheduleChanged = before.opponent !== next.opponent
+    || before.match_date !== next.match_date
+    || before.match_time !== next.match_time
+    || before.place !== next.place
+    || before.place_address !== next.place_address
+    || before.type !== next.type;
+  if (scheduleChanged && formData.get("notify_attendees") === "on") {
+    const { data: attendees } = await supabase
+      .from("attendances")
+      .select("member_id")
+      .eq("match_id", id)
+      .eq("status", "going");
+    const memberIds = (attendees ?? []).map((row) => row.member_id as string).filter(Boolean);
+    const label = matchLabel(type, opponent);
+    const body = `${match_date}${next.match_time ? ` · ${next.match_time}` : ""}${next.place ? ` · ${next.place}` : ""}`;
+    await recordNotificationEvent(supabase, {
+      kind: "updated",
+      referenceId: id,
+      title: `${label} 경기 정보가 변경됐어요`,
+      body,
+      url: `/matches/${id}`,
+      audience: "members",
+      memberIds,
+    });
+    try {
+      await sendPushToMembers(memberIds, {
+        title: "경기 정보 변경",
+        body: `${label} · ${body}`,
+        url: `/matches/${id}`,
+      });
+    } catch {
+      /* 푸시 실패 무시 */
+    }
+    revalidatePath("/notifications");
+  }
 
   revalidatePath(`/matches/${id}`);
   revalidatePath("/matches");
@@ -122,7 +175,7 @@ export async function cancelMatch(formData: FormData) {
 
   // 기존 등록/리마인드 알림은 취소 알림으로 대체한다.
   await supabase.from("notification_events").delete().eq("reference_id", id);
-  const label = match.type === "self" ? match.opponent : `vs ${match.opponent}`;
+  const label = matchLabel(match.type, match.opponent);
   await recordNotificationEvent(supabase, {
     kind: "cancelled",
     referenceId: id,
@@ -174,22 +227,32 @@ export async function deleteMatch(formData: FormData) {
 }
 
 // 참석 RSVP (본인) — attendances upsert
-export async function setAttendance(matchId: string, status: "going" | "notGoing" | "undecided") {
+export async function setAttendance(matchId: string, status: "going" | "notGoing" | "undecided"): Promise<ActionResult> {
   const profile = await getMyProfile();
-  if (!profile?.member_id) return;
+  if (!profile?.member_id) return { ok: false, message: "승인된 회원만 참석 여부를 변경할 수 있어요." };
 
   const supabase = await createClient();
-  const { data: match } = await supabase.from("matches").select("status").eq("id", matchId).maybeSingle();
-  if (match?.status === "cancelled") return;
-  await supabase
+  const { data: match } = await supabase
+    .from("matches")
+    .select("status, match_date, score_for")
+    .eq("id", matchId)
+    .maybeSingle();
+  if (!match) return { ok: false, message: "경기를 찾을 수 없어요." };
+  if (match.status === "cancelled") return { ok: false, message: "취소된 경기는 참석 여부를 변경할 수 없어요." };
+  if (match.score_for !== null || match.match_date < todayInSeoul()) {
+    return { ok: false, message: "경기가 지난 뒤에는 참석 여부를 변경할 수 없어요." };
+  }
+  const { error } = await supabase
     .from("attendances")
     .upsert(
       { match_id: matchId, member_id: profile.member_id, status, source: "self" },
       { onConflict: "match_id,member_id" },
     );
+  if (error) return { ok: false, message: "참석 여부 저장에 실패했어요." };
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/matches");
+  return { ok: true, message: "참석 여부가 저장됐어요." };
 }
 
 // 운영진 대리 참석 체크 (특정 회원) — RLS의 is_manager()로 강제
@@ -197,18 +260,23 @@ export async function setAttendanceFor(
   matchId: string,
   memberId: string,
   status: "going" | "notGoing" | "undecided",
-) {
-  if (!(await isManager())) return;
+): Promise<ActionResult> {
+  if (!(await isManager())) return { ok: false, message: "운영진만 참석 여부를 수정할 수 있어요." };
   const supabase = await createClient();
   const { data: match } = await supabase.from("matches").select("status").eq("id", matchId).maybeSingle();
-  if (match?.status === "cancelled") return;
-  await supabase
+  if (!match) return { ok: false, message: "경기를 찾을 수 없어요." };
+  if (match.status === "cancelled") return { ok: false, message: "취소된 경기의 참석 여부는 수정할 수 없어요." };
+  const { data: member } = await supabase.from("members").select("id").eq("id", memberId).eq("status", "active").maybeSingle();
+  if (!member) return { ok: false, message: "비활성 회원은 참석 명단에 넣을 수 없어요." };
+  const { error } = await supabase
     .from("attendances")
     .upsert(
       { match_id: matchId, member_id: memberId, status, source: "manager" },
       { onConflict: "match_id,member_id" },
     );
+  if (error) return { ok: false, message: "참석 여부 저장에 실패했어요." };
   revalidatePath(`/admin/matches/${matchId}/attendance`);
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/");
+  return { ok: true, message: "참석 여부가 저장됐어요." };
 }

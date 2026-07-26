@@ -3,6 +3,7 @@ import {
   AlarmClock,
   ArrowLeft,
   Bell,
+  Calendar,
   CalendarPlus,
   CircleOff,
   ChevronRight,
@@ -105,6 +106,9 @@ function NotificationIcon({ kind }: { kind: NotificationKind }) {
   }
   if (kind === "match") {
     return <span aria-label="경기 등록" className={common} style={{ color: "var(--vote-going)", background: "color-mix(in srgb, var(--vote-going) 13%, transparent)" }}><CalendarPlus size={17} /></span>;
+  }
+  if (kind === "updated") {
+    return <span aria-label="경기 변경" className={common} style={{ color: "var(--sdn-accent)", background: "color-mix(in srgb, var(--sdn-accent) 13%, transparent)" }}><Calendar size={17} /></span>;
   }
   if (kind === "reminder") {
     return <span aria-label="경기 알림" className={common} style={{ color: "var(--sdn-danger)", background: "color-mix(in srgb, var(--sdn-danger) 13%, transparent)" }}><AlarmClock size={17} /></span>;

@@ -12,10 +12,11 @@ export async function saveFormation(matchId: string, layout: FormationLayout) {
   if (!(await isManager())) return false;
   const supabase = await createClient();
 
-  const { error: deleteError } = await supabase.from("formations").delete().eq("match_id", matchId);
-  if (deleteError) return false;
-  const { error: insertError } = await supabase.from("formations").insert({ match_id: matchId, name: "custom", layout });
-  if (insertError) return false;
+  const { error } = await supabase.rpc("save_match_formation", {
+    p_match_id: matchId,
+    p_layout: layout,
+  });
+  if (error) return false;
   revalidatePath(`/matches/${matchId}/formation`);
   revalidatePath("/");
   return true;

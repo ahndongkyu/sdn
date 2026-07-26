@@ -76,7 +76,7 @@ export function ApprovalRow({
             {profile.claimed_name ?? profile.kakao_nickname ?? "카카오 사용자"}
             {autoMatch && (
               <span className="inline-flex items-center gap-1 rounded-full bg-tint px-2 py-0.5 text-[10px] font-bold text-accent">
-                <UserCheck size={11} /> 자동 매칭
+                <UserCheck size={11} /> 연결 후보
               </span>
             )}
           </div>

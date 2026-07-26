@@ -37,6 +37,11 @@ export default async function EditMatchPage({
           참석·결과·댓글 등 기록이 있는 경기는 삭제할 수 없어요. 경기 취소를 사용하면 기록은 보존되고 집계에서만 제외됩니다.
         </p>
       )}
+      {error === "save" && (
+        <p className="mb-4 rounded-xl border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12px] leading-relaxed text-danger">
+          경기 정보를 저장하지 못했어요. 다시 시도해주세요.
+        </p>
+      )}
 
       <form id="match-edit-form" action={updateMatch} className="space-y-5">
         <input type="hidden" name="id" value={id} />
@@ -84,6 +89,14 @@ export default async function EditMatchPage({
         <Field label="유튜브 영상 URL (선택)">
           <input name="youtube_url" type="url" defaultValue={match.youtube_url ?? ""} placeholder="https://youtu.be/..." className="input" />
         </Field>
+
+        <label className="flex items-center gap-2.5 rounded-xl border border-divider bg-card px-3.5 py-3 text-[12.5px] text-muted soft-card">
+          <input name="notify_attendees" type="checkbox" className="h-4 w-4 accent-[var(--sdn-accent)]" />
+          <span>
+            <strong className="font-semibold text-fg">참석자에게 변경 알림 보내기</strong>
+            <span className="mt-0.5 block text-[11px] text-subtle">날짜·시간·장소·상대팀이 바뀐 경우에만 발송됩니다.</span>
+          </span>
+        </label>
       </form>
 
       <div className="mt-6 grid grid-cols-3 gap-2 border-t border-divider pt-4">

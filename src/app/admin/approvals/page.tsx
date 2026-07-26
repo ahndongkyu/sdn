@@ -28,7 +28,7 @@ export default async function ApprovalsPage() {
       </div>
 
       <p className="text-[11px] leading-relaxed text-muted">
-        이름이 명단과 같으면 <span className="font-medium text-accent">자동 매칭</span>돼요. 명단에 없으면 신청 정보로 <span className="font-medium text-red">새 회원 등록</span>도 가능해요.
+        이름이 명단과 같으면 <span className="font-medium text-accent">연결 후보</span>가 선택돼요. 기존 기록 연결 여부를 확인한 뒤 직접 연결하고, 명단에 없을 때만 <span className="font-medium text-red">새 회원 등록</span>을 선택하세요.
       </p>
 
       {pending.length === 0 ? (

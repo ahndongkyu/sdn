@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { DndContext, useDraggable, type DragEndEvent } from "@dnd-kit/core";
 import { Share2, Users, Save } from "lucide-react";
 import { members, memberById, POSITION_COLOR } from "@/lib/mock";
@@ -49,15 +49,13 @@ function presetPositions(name: string): Record<string, Pos> {
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const subscribeToNothing = () => () => {};
 
 export function FormationBoard() {
   const [preset, setPreset] = useState("4-3-3");
   const [positions, setPositions] = useState<Record<string, Pos>>(() => presetPositions("4-3-3"));
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeToNothing, () => true, () => false);
   const pitchRef = useRef<HTMLDivElement>(null);
-
-  // dnd-kit는 SSR 시 aria id 불일치가 생겨서, 마운트 후에만 드래그 활성화
-  useEffect(() => setMounted(true), []);
 
   function applyPreset(name: string) {
     setPreset(name);

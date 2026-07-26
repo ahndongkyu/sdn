@@ -5,14 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin, isManager, getMyProfile } from "@/lib/data/auth";
 
-async function hasActiveMemberWithName(name: string, excludeId?: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("members")
-    .select("id, name")
-    .eq("status", "active");
-  const normalized = name.trim().toLocaleLowerCase();
-  return (data ?? []).some((member) => member.id !== excludeId && member.name.trim().toLocaleLowerCase() === normalized);
+function numbersFrom(formData: FormData) {
+  return ["빨검", "파랑"].flatMap((uniform) => {
+    const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
+    const number = Number.parseInt(raw, 10);
+    return raw && !Number.isNaN(number) ? [{ uniform, number }] : [];
+  });
 }
 
 // 회원 등록 (운영진). 기존 명단과 같은 이름은 승인 화면에서 연결하도록 유도한다.
@@ -22,44 +20,21 @@ export async function createMember(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  if (await hasActiveMemberWithName(name)) {
-    redirect("/admin/members/new?error=duplicate");
-  }
-
   const position1 = String(formData.get("position1") ?? "MF");
   const position2 = String(formData.get("position2") ?? "");
   const requestedRole = String(formData.get("role") ?? "member");
   const role = admin && requestedRole === "manager" ? "manager" : "member";
 
   const supabase = await createClient();
-
-  const { data: member, error } = await supabase
-    .from("members")
-    .insert({
-      name,
-      position1,
-      position2: position2 || null,
-      role,
-    })
-    .select("id")
-    .single();
-
-  if (error || !member) {
-    console.error("createMember", error);
-    return;
-  }
-
-  // 유니폼별 등번호 (빨검 / 파랑)
-  const numbers: { member_id: string; uniform: string; number: number }[] = [];
-  for (const uniform of ["빨검", "파랑"]) {
-    const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
-    if (raw) {
-      const n = parseInt(raw, 10);
-      if (!Number.isNaN(n)) numbers.push({ member_id: member.id, uniform, number: n });
-    }
-  }
-  if (numbers.length) {
-    await supabase.from("member_numbers").insert(numbers);
+  const { error } = await supabase.rpc("create_member_with_numbers", {
+    p_name: name,
+    p_position1: position1,
+    p_position2: position2,
+    p_role: role,
+    p_numbers: numbersFrom(formData),
+  });
+  if (error) {
+    redirect(`/admin/members/new?error=${error.message.includes("같은 이름") ? "duplicate" : "save"}`);
   }
 
   revalidatePath("/members");
@@ -76,33 +51,19 @@ export async function updateMember(formData: FormData) {
   const mine = ((me?.member_id as string | null) ?? null) === id;
   if (!manager && !mine) return;
 
-  if (await hasActiveMemberWithName(name, id)) {
-    redirect(`/members/${id}/edit?error=duplicate`);
-  }
-
   const supabase = await createClient();
-  const patch: Record<string, string | null> = {
-    name,
-    position1: String(formData.get("position1") ?? "MF"),
-    position2: String(formData.get("position2") ?? "") || null,
-  };
-  if (admin) {
-    const requestedRole = String(formData.get("role") ?? "member");
-    patch.role = ["member", "manager", "admin"].includes(requestedRole) ? requestedRole : "member";
+  const requestedRole = String(formData.get("role") ?? "member");
+  const { error } = await supabase.rpc("update_member_with_numbers", {
+    p_member_id: id,
+    p_name: name,
+    p_position1: String(formData.get("position1") ?? "MF"),
+    p_position2: String(formData.get("position2") ?? ""),
+    p_role: admin && ["member", "manager", "admin"].includes(requestedRole) ? requestedRole : "member",
+    p_numbers: numbersFrom(formData),
+  });
+  if (error) {
+    redirect(`/members/${id}/edit?error=${error.message.includes("같은 이름") ? "duplicate" : "save"}`);
   }
-  await supabase.from("members").update(patch).eq("id", id);
-
-  // 등번호 교체 (기존 삭제 후 재삽입)
-  await supabase.from("member_numbers").delete().eq("member_id", id);
-  const numbers: { member_id: string; uniform: string; number: number }[] = [];
-  for (const uniform of ["빨검", "파랑"]) {
-    const raw = String(formData.get(`number_${uniform}`) ?? "").trim();
-    if (raw) {
-      const n = parseInt(raw, 10);
-      if (!Number.isNaN(n)) numbers.push({ member_id: id, uniform, number: n });
-    }
-  }
-  if (numbers.length) await supabase.from("member_numbers").insert(numbers);
 
   revalidatePath("/members");
   revalidatePath(`/members/${id}`);

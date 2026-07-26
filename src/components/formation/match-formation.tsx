@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useCallback, useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, UserPlus, UserMinus, RotateCcw, Check, Share2, ChevronDown, Search } from "lucide-react";
 import { toPng } from "html-to-image";
@@ -86,6 +86,8 @@ export function MatchFormation({
   const [selected, setSelected] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(initial != null);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const failedLayoutRef = useRef<FormationLayout | null>(null);
   const [showRoster, setShowRoster] = useState(false);
   const [benchSort, setBenchSort] = useState<"name" | "low">("name");
   const [manageTab, setManageTab] = useState<"add" | "del">("add");
@@ -154,7 +156,7 @@ export function MatchFormation({
       : [...bench].sort((a, b) => a.name.localeCompare(b.name, "ko"));
   const layoutSignature = JSON.stringify({ presetByQ, assignByQ });
 
-  function buildLayout(): FormationLayout {
+  const buildLayout = useCallback((): FormationLayout => {
     const layout: FormationLayout = {};
     for (const q of QUARTERS) {
       layout[q] = {
@@ -163,9 +165,9 @@ export function MatchFormation({
       };
     }
     return layout;
-  }
+  }, [assignByQ, presetByQ]);
 
-  function queueSave(layout: FormationLayout) {
+  const queueSave = useCallback((layout: FormationLayout) => {
     const version = ++saveVersionRef.current;
     setSaving(true);
     const job = saveQueueRef.current
@@ -174,14 +176,21 @@ export function MatchFormation({
         const ok = await saveFormation(matchId, layout);
         if (version === saveVersionRef.current) {
           setSaving(false);
-          if (ok) setSaved(true);
-          else toast("포메이션을 저장하지 못했어요");
+          if (ok) {
+            setSaved(true);
+            setSaveFailed(false);
+            failedLayoutRef.current = null;
+          } else {
+            failedLayoutRef.current = layout;
+            setSaveFailed(true);
+            toast("포메이션을 저장하지 못했어요");
+          }
         }
         return ok;
       });
     saveQueueRef.current = job;
     return job;
-  }
+  }, [matchId]);
 
   function scrollTo(ref: React.RefObject<HTMLDivElement | null>) {
     window.setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
@@ -204,7 +213,7 @@ export function MatchFormation({
       window.clearTimeout(timer);
       if (autoSaveTimerRef.current === timer) autoSaveTimerRef.current = null;
     };
-  }, [isManager, layoutSignature]);
+  }, [isManager, layoutSignature, buildLayout, queueSave]);
 
   function onSlotClick(i: number) {
     if (!isManager) return; // 회원은 보기 전용
@@ -328,7 +337,12 @@ export function MatchFormation({
     const ids = [...manageSel];
     const status = manageTab === "add" ? "going" : "undecided";
     startAdd(async () => {
-      for (const id of ids) await setAttendanceFor(matchId, id, status);
+      const results = await Promise.all(ids.map((id) => setAttendanceFor(matchId, id, status)));
+      const failed = results.find((result) => !result.ok);
+      if (failed) {
+        toast(failed.message);
+        return;
+      }
       toast(manageTab === "add" ? `${ids.length}명 참석 추가됐어요` : `${ids.length}명 명단에서 제거됐어요`);
       setManageSel(new Set());
       setShowRoster(false);
@@ -434,7 +448,16 @@ export function MatchFormation({
             </span>
           )}
           {isManager && (
-            <span className="shrink-0 text-[10px] text-subtle">{saving ? "저장 중…" : "자동 저장"}</span>
+            saveFailed ? (
+              <button
+                type="button"
+                onClick={() => { void queueSave(failedLayoutRef.current ?? buildLayout()); }}
+                disabled={saving}
+                className="shrink-0 rounded-full bg-danger/10 px-2 py-0.5 text-[10px] font-bold text-danger disabled:opacity-60"
+              >
+                저장 실패 · 다시 시도
+              </button>
+            ) : <span className="shrink-0 text-[10px] text-subtle">{saving ? "저장 중…" : "자동 저장"}</span>
           )}
           <span className="truncate text-[13px] text-muted">vs {opponent} · {preset} · {filled}/11</span>
         </div>

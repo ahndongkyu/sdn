@@ -18,7 +18,13 @@ export async function submitClaimName(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !name) return;
-  await supabase.from("profiles").update({
+  const { data: current } = await supabase
+    .from("profiles")
+    .select("claimed_name, signup_rejected_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  const shouldNotifyManagers = !current?.claimed_name || Boolean(current.signup_rejected_at);
+  const { error } = await supabase.from("profiles").update({
     claimed_name: name,
     claimed_position1: String(formData.get("position1") ?? "").trim() || null,
     claimed_position2: String(formData.get("position2") ?? "").trim() || null,
@@ -27,13 +33,16 @@ export async function submitClaimName(formData: FormData) {
     // 거절된 신청자가 다시 제출하면 승인 대기 상태로 되돌린다.
     signup_rejected_at: null,
   }).eq("id", user.id);
-  await supabase.rpc("record_signup_notification");
-  // 운영진·관리자에게 가입 신청 알림 푸시
-  await sendPushToManagers({
-    title: "SDN · 새 가입 신청",
-    body: `${name} 님이 승인을 기다리고 있어요`,
-    url: "/admin/approvals",
-  });
+  if (error) return;
+  if (shouldNotifyManagers) {
+    await supabase.rpc("record_signup_notification");
+    // 최초 신청 또는 거절 후 재신청일 때만 운영진에게 푸시한다.
+    await sendPushToManagers({
+      title: "SDN · 새 가입 신청",
+      body: `${name} 님이 승인을 기다리고 있어요`,
+      url: "/admin/approvals",
+    });
+  }
   revalidatePath("/pending");
   revalidatePath("/admin/approvals");
   revalidatePath("/notifications");

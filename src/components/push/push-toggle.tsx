@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Bell } from "lucide-react";
 import { saveSubscription, removeSubscription } from "@/lib/actions/push";
 import { toast } from "@/lib/toast";
 
 const VAPID = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
+const subscribeToNothing = () => () => {};
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -17,24 +18,26 @@ function urlBase64ToUint8Array(base64: string) {
 }
 
 export function PushToggle() {
-  const [supported, setSupported] = useState<boolean | null>(null);
+  const isClient = useSyncExternalStore(subscribeToNothing, () => true, () => false);
+  const supported = isClient && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const isIOS = isClient && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = isClient && (window.matchMedia?.("(display-mode: standalone)").matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true);
+  const iosNeedsInstall = isIOS && !standalone;
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [iosNeedsInstall, setIosNeedsInstall] = useState(false);
 
   useEffect(() => {
-    const ok = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-    setSupported(ok);
-    // 아이폰은 홈 화면에 추가(PWA 설치)해서 앱으로 열어야만 푸시가 됨 (Safari 탭에선 미지원)
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const standalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIosNeedsInstall(isIOS && !standalone);
-    if (ok) {
-      navigator.serviceWorker.getRegistration().then((reg) => reg?.pushManager.getSubscription()).then((s) => setEnabled(!!s)).catch(() => {});
-    }
-  }, []);
+    if (!supported) return;
+    let active = true;
+    navigator.serviceWorker
+      .getRegistration()
+      .then((reg) => reg?.pushManager.getSubscription())
+      .then((subscription) => {
+        if (active) setEnabled(Boolean(subscription));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [supported]);
 
   async function enable() {
     setBusy(true);
@@ -86,7 +89,9 @@ export function PushToggle() {
         <div className="text-[11px] text-subtle">
           {iosNeedsInstall
             ? "아이폰은 '홈 화면에 추가' 후 앱에서 켜주세요"
-            : supported === false
+            : !isClient
+              ? "알림 환경 확인 중"
+              : !supported
               ? "이 기기는 지원 안 함"
               : enabled
                 ? "새 공지·경기 알림 받는 중"
@@ -97,7 +102,7 @@ export function PushToggle() {
         role="switch"
         aria-checked={enabled}
         onClick={enabled ? disable : enable}
-        disabled={busy || supported === null || supported === false}
+        disabled={busy || !isClient || !supported}
         className="relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40"
         style={{ background: enabled ? "var(--sdn-blue)" : "var(--sdn-faint)" }}
       >

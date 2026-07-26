@@ -15,6 +15,28 @@ function ensure() {
   return configured;
 }
 
+type ProfileMember = { status?: string } | { status?: string }[] | null;
+
+function activeProfileIds(rows: { id: string; members: ProfileMember }[]) {
+  return rows
+    .filter((row) => {
+      const member = Array.isArray(row.members) ? row.members[0] : row.members;
+      return member?.status === "active";
+    })
+    .map((row) => row.id);
+}
+
+async function getActiveProfileIds(memberIds?: string[]) {
+  const supabase = await createClient();
+  let query = supabase
+    .from("profiles")
+    .select("id, members(status)")
+    .not("member_id", "is", null);
+  if (memberIds) query = query.in("member_id", memberIds);
+  const { data } = await query;
+  return { supabase, profileIds: activeProfileIds((data ?? []) as { id: string; members: ProfileMember }[]) };
+}
+
 // 구독 배열에 직접 발송 (크론 등 세션 없는 곳에서 admin 조회 후 사용)
 export async function sendToSubscriptions(
   subs: { endpoint: string; p256dh: string; auth: string }[],
@@ -39,9 +61,7 @@ export async function sendPushToMembers(
   payload: { title: string; body: string; url?: string },
 ) {
   if (!ensure() || memberIds.length === 0) return;
-  const supabase = await createClient();
-  const { data: profs } = await supabase.from("profiles").select("id").in("member_id", memberIds);
-  const profileIds = (profs ?? []).map((p) => p.id as string);
+  const { supabase, profileIds } = await getActiveProfileIds(memberIds);
   if (profileIds.length === 0) return;
   const { data: subs } = await supabase
     .from("push_subscriptions")
@@ -78,8 +98,12 @@ export async function sendPushToManagers(payload: { title: string; body: string;
 // 전체 구독자에게 푸시 발송 (운영진 세션에서 호출 — RLS로 전체 조회 허용)
 export async function sendPushToAll(payload: { title: string; body: string; url?: string }) {
   if (!ensure()) return;
-  const supabase = await createClient();
-  const { data } = await supabase.from("push_subscriptions").select("id, endpoint, p256dh, auth");
+  const { supabase, profileIds } = await getActiveProfileIds();
+  if (profileIds.length === 0) return;
+  const { data } = await supabase
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .in("profile_id", profileIds);
   const json = JSON.stringify(payload);
 
   await Promise.all(

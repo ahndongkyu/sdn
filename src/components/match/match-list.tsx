@@ -5,14 +5,10 @@ import Link from "next/link";
 import { Calendar, Check, ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
 import { formatDateKo, dday, matchCode } from "@/lib/format";
 import type { MatchRow } from "@/lib/data/matches";
+import { isPast } from "@/lib/match-status";
 import { MatchCode } from "@/components/match/match-code";
 
 const INITIAL_VISIBLE_MONTHS = 3;
-
-function past(m: MatchRow) {
-  const today = new Date().toISOString().slice(0, 10);
-  return m.status === "cancelled" || m.score_for !== null || m.match_date < today;
-}
 
 function resultOf(m: MatchRow) {
   if (m.type === "self") {
@@ -55,11 +51,11 @@ export function MatchList({
   const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
 
   const upcoming = useMemo(
-    () => matches.filter((m) => !past(m)).sort((a, b) => a.match_date.localeCompare(b.match_date)),
+    () => matches.filter((m) => !isPast(m)).sort((a, b) => a.match_date.localeCompare(b.match_date)),
     [matches],
   );
   const completed = useMemo(
-    () => matches.filter(past).sort((a, b) => b.match_date.localeCompare(a.match_date)),
+    () => matches.filter(isPast).sort((a, b) => b.match_date.localeCompare(a.match_date)),
     [matches],
   );
 
