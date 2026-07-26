@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { X } from "lucide-react";
-import { getPendingProfiles, getLinkedMemberIds } from "@/lib/data/approvals";
-import { getMembers } from "@/lib/data/members";
+import { getApprovalMembers, getPendingProfiles, getLinkedMemberIds } from "@/lib/data/approvals";
 import { ApprovalRow } from "@/components/admin/approval-row";
 
 export default async function ApprovalsPage() {
   const [pending, members, linked] = await Promise.all([
     getPendingProfiles(),
-    getMembers(),
+    getApprovalMembers(),
     getLinkedMemberIds(),
   ]);
 
@@ -15,6 +14,8 @@ export default async function ApprovalsPage() {
     id: m.id,
     name: m.name,
     position1: m.position1,
+    member_numbers: m.member_numbers,
+    recordGames: m.recordGames,
     linked: linked.has(m.id),
   }));
 
@@ -28,7 +29,7 @@ export default async function ApprovalsPage() {
       </div>
 
       <p className="text-[11px] leading-relaxed text-muted">
-        이름이 명단과 같으면 <span className="font-medium text-accent">연결 후보</span>가 선택돼요. 기존 기록 연결 여부를 확인한 뒤 직접 연결하고, 명단에 없을 때만 <span className="font-medium text-red">새 회원 등록</span>을 선택하세요.
+        이름이 명단과 같으면 <span className="font-medium text-accent">연결 후보</span>를 먼저 확인하세요. 포지션·등번호·기존 참여 기록을 비교한 뒤 연결하고, 명단에 없거나 다른 동명이인일 때만 <span className="font-medium text-red">새 회원 등록</span>을 선택하세요.
       </p>
 
       {pending.length === 0 ? (

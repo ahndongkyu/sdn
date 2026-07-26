@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { AlertTriangle, UserCheck, UserPlus, X } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { AlertTriangle, Check, UserCheck, UserPlus, X } from "lucide-react";
 import { linkProfile, createMemberFromSignup, rejectSignup } from "@/lib/actions/approvals";
 import { toast } from "@/lib/toast";
 import { Avatar } from "@/components/ui/avatar";
@@ -17,12 +17,27 @@ type Profile = {
   email: string | null;
 };
 
+type ApprovalMember = {
+  id: string;
+  name: string;
+  position1: string;
+  member_numbers: { uniform: string; number: number }[];
+  recordGames: number;
+  linked: boolean;
+};
+
+function numbersLabel(member: ApprovalMember) {
+  return member.member_numbers
+    .map(({ uniform, number }) => `${uniform} ${number}`)
+    .join(" · ");
+}
+
 export function ApprovalRow({
   profile,
   members,
 }: {
   profile: Profile;
-  members: { id: string; name: string; position1: string; linked: boolean }[];
+  members: ApprovalMember[];
 }) {
   // 같은 이름의 활성 명단은 연결 여부와 무관하게 모두 확인한다.
   const matches = profile.claimed_name
@@ -35,7 +50,27 @@ export function ApprovalRow({
   const hasSameName = matches.length > 0;
 
   const [memberId, setMemberId] = useState(autoMatch?.id ?? "");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, start] = useTransition();
+
+  const selectedMember = useMemo(
+    () => linkable.find((member) => member.id === memberId) ?? null,
+    [linkable, memberId],
+  );
+
+  useEffect(() => {
+    if (!confirmOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setConfirmOpen(false);
+    };
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [confirmOpen]);
 
   const pos = [profile.claimed_position1, profile.claimed_position2].filter(Boolean).join(" · ");
   const nums = [
@@ -65,6 +100,19 @@ export function ApprovalRow({
       return;
     }
     start(() => run(false));
+  }
+
+  function handleConfirmLink() {
+    if (!selectedMember) return;
+    start(async () => {
+      const result = await linkProfile(profile.id, selectedMember.id);
+      if (!result.ok) {
+        toast(result.message);
+        return;
+      }
+      setConfirmOpen(false);
+      toast(result.message);
+    });
   }
 
   return (
@@ -98,28 +146,42 @@ export function ApprovalRow({
       )}
 
       {/* 기존 회원과 연결 */}
-      <div className="mb-2 text-[11px] font-semibold text-muted">기존 명단과 연결</div>
-      <div className="flex gap-2">
-        <select value={memberId} onChange={(e) => setMemberId(e.target.value)} className="input flex-1">
-          <option value="">연결할 회원 선택…</option>
-          {linkable.map((m) => (
-            <option key={m.id} value={m.id}>{m.name} ({m.position1})</option>
-          ))}
-        </select>
-        <button
-          disabled={!memberId || pending}
-          onClick={() =>
-            start(async () => {
-              const name = members.find((m) => m.id === memberId)?.name ?? "";
-              const result = await linkProfile(profile.id, memberId);
-              toast(result.ok ? `${name}(으)로 연결됐어요` : result.message);
-            })
-          }
-          className="shrink-0 rounded-lg bg-navy px-4 text-[13px] font-medium text-white disabled:opacity-40"
-        >
-          연결
-        </button>
-      </div>
+      <div className="mb-2 text-[11px] font-semibold text-muted">기존 회원 연결</div>
+      <select value={memberId} onChange={(event) => setMemberId(event.target.value)} className="input mb-2 w-full text-[12px]">
+        <option value="">연결할 기존 회원 선택…</option>
+        {linkable.map((member) => (
+          <option key={member.id} value={member.id}>
+            {member.name} · {member.position1}{numbersLabel(member) ? ` · ${numbersLabel(member)}` : ""}
+          </option>
+        ))}
+      </select>
+
+      {selectedMember && (
+        <div className="rounded-xl border border-accent bg-tint/60 p-2.5">
+          <div className="flex items-center gap-2.5">
+            <Avatar size={34} />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold text-fg">
+                <span>{selectedMember.name}</span>
+                <span className="rounded-full bg-card px-1.5 py-0.5 text-[10px] text-accent">{selectedMember.position1}</span>
+                {numbersLabel(selectedMember) && (
+                  <span className="rounded-full bg-card px-1.5 py-0.5 text-[10px] text-muted">{numbersLabel(selectedMember)}</span>
+                )}
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted">기존 참여 {selectedMember.recordGames}경기</div>
+            </div>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-white"><Check size={13} strokeWidth={3} /></span>
+          </div>
+        </div>
+      )}
+
+      <button
+        disabled={!selectedMember || pending}
+        onClick={() => setConfirmOpen(true)}
+        className="mt-2 flex w-full items-center justify-center rounded-lg bg-navy py-2.5 text-[13px] font-bold text-white disabled:opacity-40"
+      >
+        기존 회원으로 연결
+      </button>
 
       {/* 또는 신규 등록 */}
       <div className="my-2.5 flex items-center gap-2 text-[10px] text-faint">
@@ -141,6 +203,39 @@ export function ApprovalRow({
           <X size={15} /> 가입 거절
         </button>
       </div>
+
+      {confirmOpen && selectedMember && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 backdrop-blur-[2px] sm:items-center sm:p-4" onClick={() => setConfirmOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby={`link-confirm-title-${profile.id}`} onClick={(event) => event.stopPropagation()} className="w-full max-w-[480px] rounded-t-[26px] bg-card px-4 pb-[max(24px,env(safe-area-inset-bottom))] pt-3 shadow-2xl sm:rounded-[26px]">
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line sm:hidden" />
+            <div className="flex items-start justify-between gap-3 px-1">
+              <div>
+                <h2 id={`link-confirm-title-${profile.id}`} className="text-[19px] font-extrabold tracking-[-0.035em] text-fg">기존 기록을 연결할까요?</h2>
+                <p className="mt-1 text-[11px] leading-4 text-subtle">카카오 계정과 기존 회원 정보를 한 번에 연결합니다.</p>
+              </div>
+              <button type="button" onClick={() => setConfirmOpen(false)} aria-label="닫기" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sunken text-muted"><X size={17} /></button>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-divider bg-sunken px-3 py-3">
+              <div className="flex items-center gap-2.5">
+                <Avatar size={34} />
+                <div className="min-w-0 flex-1 text-[13px] font-bold text-fg">
+                  {selectedMember.name}
+                  <span className="mx-1.5 text-subtle">·</span>{selectedMember.position1}
+                  {numbersLabel(selectedMember) && <><span className="mx-1.5 text-subtle">·</span>{numbersLabel(selectedMember)}</>}
+                </div>
+              </div>
+            </div>
+            <p className="mt-4 text-[14px] font-bold leading-6 text-fg">기존 기록 {selectedMember.recordGames}경기를 이 카카오 계정에 연결합니다.</p>
+            <p className="mt-1 text-[11px] leading-4 text-subtle">기존 회원 명단과 경기 기록은 그대로 유지돼요.</p>
+
+            <div className="mt-6 flex gap-2">
+              <button type="button" disabled={pending} onClick={() => setConfirmOpen(false)} className="flex-1 rounded-[12px] border border-divider py-3.5 text-[14px] font-bold text-muted disabled:opacity-40">취소</button>
+              <button type="button" disabled={pending} onClick={handleConfirmLink} className="flex-1 rounded-[12px] bg-navy py-3.5 text-[14px] font-extrabold text-white disabled:opacity-40">{pending ? "연결 중…" : "연결 확정"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isManager } from "@/lib/data/auth";
 import { sendPushToManagers } from "@/lib/push";
+import { todayInSeoul } from "@/lib/date";
 
-type ApprovalResult = { ok: true; message: string } | { ok: false; message: string };
+type ApprovalResult = { ok: true; message: string; recordGames?: number } | { ok: false; message: string };
 
 const toNum = (v: FormDataEntryValue | null): number | null => {
   const n = parseInt(String(v ?? "").trim(), 10);
@@ -72,6 +73,16 @@ export async function linkProfile(profileId: string, memberId: string): Promise<
   if (!profileId || !memberId) return { ok: false, message: "연결할 회원을 선택해주세요." };
 
   const supabase = await createClient();
+  const [attendancesRes, matchesRes] = await Promise.all([
+    supabase.from("attendances").select("match_id").eq("member_id", memberId).eq("status", "going"),
+    supabase.from("matches").select("id, match_date, status"),
+  ]);
+  const completedMatchIds = new Set(
+    (matchesRes.data ?? [])
+      .filter((match) => match.status !== "cancelled" && match.match_date <= todayInSeoul())
+      .map((match) => match.id),
+  );
+  const recordGames = (attendancesRes.data ?? []).filter((attendance) => completedMatchIds.has(attendance.match_id)).length;
   const { error } = await supabase.rpc("link_pending_profile", {
     p_profile_id: profileId,
     p_member_id: memberId,
@@ -81,7 +92,7 @@ export async function linkProfile(profileId: string, memberId: string): Promise<
   revalidatePath("/admin/approvals");
   revalidatePath("/more");
   revalidatePath("/members");
-  return { ok: true, message: "기존 회원 기록에 카카오 계정을 연결했어요." };
+  return { ok: true, recordGames, message: `기존 기록 ${recordGames}경기에 카카오 계정을 연결했어요.` };
 }
 
 // 가입 신청 거절: 회원은 만들거나 연결하지 않고 대기 목록에서만 제외
