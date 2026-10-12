@@ -21,6 +21,7 @@ export type MatchRow = {
   cancel_reason: string | null;
   mvp_member_id: string | null;
   mom_vote_close: string | null;
+  result_revision: number;
 };
 
 export type AttendanceRow = {
@@ -60,7 +61,7 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close")
+    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close, result_revision")
     .eq("id", id)
     .maybeSingle();
   return (data as MatchRow) ?? null;
@@ -75,15 +76,16 @@ export async function getMatchAttendances(matchId: string): Promise<AttendanceRo
   return (data ?? []) as unknown as AttendanceRow[];
 }
 
-export type GoalRow = { id: string; scorer_id: string | null; assist_id: string | null; is_own_goal: boolean };
+export type GoalRow = { id: string; scorer_id: string | null; assist_id: string | null; is_own_goal: boolean; assist_pending: boolean };
 
 export async function getMatchGoals(matchId: string): Promise<GoalRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("goals")
-    .select("id, scorer_id, assist_id, is_own_goal")
+    .select("id, scorer_id, assist_id, is_own_goal, assist_pending")
     .eq("match_id", matchId)
     .order("created_at");
+  if (error) throw new Error("득점 기록을 불러오지 못했어요. 다시 시도해주세요.");
   return (data ?? []) as GoalRow[];
 }
 

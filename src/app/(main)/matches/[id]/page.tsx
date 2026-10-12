@@ -4,6 +4,7 @@ import { ArrowLeft, Play, Shirt, Pencil, Calendar, MapPin, MessageCircle, Chevro
 import { getCancelReasonLabel, getMatch, getMatches, getMatchAttendances, getMatchGoals, getMyAttendance, getMvpVotes, isMvpVoteClosed, isPast } from "@/lib/data/matches";
 import { getMatchTalkCount } from "@/lib/data/comments";
 import { getMembers } from "@/lib/data/members";
+import { getFormation } from "@/lib/data/formations";
 import { getGuests } from "@/lib/data/guests";
 import { getMyProfile } from "@/lib/data/auth";
 import { formatDateKo, matchCode } from "@/lib/format";
@@ -18,12 +19,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const [attendances, goals, members, profile, matches] = await Promise.all([
+  const [attendances, goals, members, profile, matches, formation] = await Promise.all([
     getMatchAttendances(id),
     getMatchGoals(id),
     getMembers(),
     getMyProfile(),
     getMatches(),
+    getFormation(id),
   ]);
   const myMemberId = (profile?.member_id as string | null) ?? null;
   const role = (profile?.members as { role?: string } | null)?.role;
@@ -67,27 +69,39 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   // MOM 투표 마감 여부 (결과 입력됨 + 마감시각 지남). 결과·승자는 참가선수 박스에서 표시.
   const hasResult = match.score_for !== null;
+  const participantCount = going.length + guests.length;
+  const hasFormation = Object.values(formation ?? {}).some((quarter) => quarter.assignments.length > 0);
+  const recordedGoals = goals.filter((g) => g.is_own_goal || g.scorer_id).length;
+  const missingGoals = Math.max(0, (match.score_for ?? 0) - recordedGoals);
+  const pendingAssists = goals.filter((g) => !g.is_own_goal && g.assist_pending).length;
+  const excessGoals = Math.max(0, goals.length - (match.score_for ?? 0));
+  const recordHint = !hasResult ? "점수 · 득점자 · 도움" : excessGoals ? `득점 기록 ${excessGoals}골 초과 · 확인 필요` : missingGoals ? `득점자 ${missingGoals}골 미입력 · 이어서 작성` : pendingAssists ? `도움 ${pendingAssists}건 확인 필요` : "경기 기록 저장됨";
+  const nextAction = past || hasResult
+    ? { href: `/admin/matches/${id}/result`, label: hasResult ? "경기 기록 이어서 확인 →" : "경기 기록 입력하기 →" }
+    : participantCount === 0
+      ? { href: `/admin/matches/${id}/attendance`, label: "참석자 등록하기 →" }
+      : { href: `/matches/${id}/formation`, label: hasFormation ? "포메이션 확인하기 →" : "포메이션 만들기 →" };
   const voteClosed = hasResult && isMvpVoteClosed(match.mom_vote_close);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Link href="/matches" className="flex items-center gap-2">
+        <Link href="/matches" className="flex min-h-11 items-center gap-2">
           <ArrowLeft size={20} className="text-muted" />
-          <span className="text-[15px] font-medium">매치 상세</span>
+          <span className="text-[15px] font-medium">경기 상세</span>
         </Link>
         {isManager && (
           <div className="flex items-center gap-1.5">
-            <Link href={`/admin/matches/${id}/edit`} className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-xs text-muted">
+            <Link href={`/admin/matches/${id}/edit`} className="flex min-h-11 items-center gap-1 rounded-lg px-3 text-sm text-muted">
               <Pencil size={13} /> 수정
             </Link>
-            {!cancelled && <Link href={`/admin/matches/${id}/result`} className="rounded-lg bg-red px-2.5 py-1.5 text-xs text-white">결과 입력</Link>}
+            <span className="rounded-lg bg-tint px-2 py-1 text-xs text-accent">운영진</span>
           </div>
         )}
       </div>
 
       {/* 스코어 + 득점 기록 통합 카드 */}
-      <section className="rounded-2xl border border-line bg-card soft-card p-4">
+      <section className="rounded-2xl border border-line bg-card soft-card p-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-subtle">{match.type === "self" ? "자체전" : "정규 매치"}</span>
@@ -144,8 +158,18 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </section>
 
+      {isManager && !cancelled && <>
+        <section className="rounded-2xl border border-line bg-card p-4">
+          <div className="mb-1 flex flex-wrap items-center justify-between gap-2"><h2 className="text-base font-bold">{past || hasResult ? "이번 경기 기록" : "이번 경기 준비"}</h2><span className="text-xs text-muted">참석부터 기록까지</span></div>
+          <WorkflowRow number="1" title={`참석자 ${participantCount}명`} description={`본인 투표 + 운영진 등록${guests.length ? ` · 용병 ${guests.length}명 포함` : ""}`} href={`/admin/matches/${id}/attendance`} action="관리" />
+          <WorkflowRow number="2" title={hasFormation ? "포메이션 확인" : "포메이션 만들기"} description={hasFormation ? "저장된 라인업을 확인해요" : "참석한 선수로 라인업을 정해요"} href={`/matches/${id}/formation`} action={hasFormation ? "보기" : "시작"} />
+          <WorkflowRow number="3" title="경기 기록" description={recordHint} href={`/admin/matches/${id}/result`} action={hasResult ? "수정" : "입력"} />
+        </section>
+        <Link href={nextAction.href} className="flex min-h-12 items-center justify-center rounded-xl bg-accent px-4 text-sm font-bold text-white">{nextAction.label}</Link>
+      </>}
+
       {/* 예정: RSVP */}
-      {!past && !cancelled && (
+      {!past && !cancelled && !isManager && (
         <section className="rounded-2xl border border-divider bg-card soft-card p-3.5">
           <div className="mb-2.5 text-[13px] text-muted">참석 체크</div>
           <RsvpButtons matchId={id} current={myStatus} />
@@ -166,9 +190,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             <Play size={15} /> 영상
           </span>
         )}
-        <Link href={`/matches/${id}/formation`} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line py-2.5 text-[13px]">
-          <Shirt size={16} /> 포메이션
-        </Link>
+        {!isManager && <Link href={`/matches/${id}/formation`} className="flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-line text-sm">
+          <Shirt size={16} aria-hidden /> 포메이션
+        </Link>}
         <Link
           href={`/matches/${id}/comment`}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-[13px] ${talkActive ? "talk-glow border border-accent font-bold text-accent" : "border border-line text-muted"}`}
@@ -176,6 +200,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           <MessageCircle size={15} /> 코멘트{talkActive && talkCount.comments > 0 ? ` ${talkCount.comments}` : ""}
         </Link>
       </div>
+
+      {isManager && !past && !cancelled && <Link href={`/matches/${id}/attend`} className="flex min-h-11 items-center justify-center gap-1 rounded-xl border border-line text-sm text-muted">내 참석 투표 · 참석 현황 <ChevronRight size={16} aria-hidden /></Link>}
 
       {/* 참가 선수 (+ MOM 투표) */}
       {!cancelled && <div>
@@ -225,4 +251,12 @@ function result(f: number | null, a: number | null) {
   if (f > a) return { label: "승리", color: "#1d9e75" };
   if (f < a) return { label: "패배", color: "#dc2f3c" };
   return { label: "무승부", color: "#888780" };
+}
+
+function WorkflowRow({ number, title, description, href, action }: { number: string; title: string; description: string; href: string; action: string }) {
+  return <div className="flex items-center gap-3 border-b border-divider py-4 last:border-0">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tint text-sm font-bold text-accent">{number}</span>
+    <div className="min-w-0 flex-1"><h3 className="text-sm font-semibold">{title}</h3><p className="mt-1 text-xs leading-relaxed text-muted">{description}</p></div>
+    <Link href={href} aria-label={`${title} ${action}`} className="flex min-h-11 shrink-0 items-center gap-1 px-1 text-sm font-semibold text-accent">{action}<ChevronRight size={16} aria-hidden /></Link>
+  </div>;
 }

@@ -280,3 +280,18 @@ export async function setAttendanceFor(
   revalidatePath("/");
   return { ok: true, message: "참석 여부가 저장됐어요." };
 }
+
+export async function saveAttendanceSelection(
+  matchId: string,
+  changes: { memberId: string; status: "going" | "notGoing" | "undecided"; expectedStatus: string | null }[],
+): Promise<ActionResult> {
+  if (!(await isManager())) return { ok: false, message: "운영진만 참석 명단을 저장할 수 있어요." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("save_match_attendance", {
+    p_match_id: matchId,
+    p_changes: changes.map((c) => ({ member_id: c.memberId, status: c.status, expected_status: c.expectedStatus })),
+  });
+  if (error) return { ok: false, message: error.code === "P0001" ? error.message : "참석 명단을 저장하지 못했어요. 다시 시도해주세요." };
+  for (const path of ["/", "/matches", `/matches/${matchId}`, `/matches/${matchId}/attend`, `/matches/${matchId}/formation`, `/admin/matches/${matchId}/attendance`, `/admin/matches/${matchId}/result`]) revalidatePath(path);
+  return { ok: true, message: "참석 명단이 저장됐어요." };
+}
