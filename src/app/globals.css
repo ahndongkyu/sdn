@@ -432,3 +432,14 @@ a.tap:active {
     opacity: 0.85;
   }
 }
+
+.lineup-surface {
+  --lineup-grass: #e3eee9;
+  --lineup-mark: #b7d0c3;
+  --lineup-player: #376654;
+}
+.dark .lineup-surface {
+  --lineup-grass: #183c33;
+  --lineup-mark: #366558;
+  --lineup-player: #b4e0cc;
+}
