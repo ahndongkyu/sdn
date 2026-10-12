@@ -169,7 +169,7 @@ export async function cancelMatch(formData: FormData) {
   const cancelReason = detail || reasonType;
   const { error } = await supabase
     .from("matches")
-    .update({ status: "cancelled", cancel_reason: cancelReason, mvp_member_id: null, mom_vote_close: null })
+    .update({ status: "cancelled", cancel_reason: cancelReason })
     .eq("id", id);
   if (error) return;
 
@@ -208,7 +208,6 @@ export async function deleteMatch(formData: FormData) {
     supabase.from("attendances").select("id", { count: "exact", head: true }).eq("match_id", id),
     supabase.from("goals").select("id", { count: "exact", head: true }).eq("match_id", id),
     supabase.from("formations").select("id", { count: "exact", head: true }).eq("match_id", id),
-    supabase.from("mvp_votes").select("id", { count: "exact", head: true }).eq("match_id", id),
     supabase.from("guests").select("id", { count: "exact", head: true }).eq("match_id", id),
     supabase.from("match_comments").select("id", { count: "exact", head: true }).eq("match_id", id),
     supabase.from("comments").select("id", { count: "exact", head: true }).eq("match_id", id),

@@ -105,7 +105,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <Stat v={stat?.assists ?? 0} l="도움" />
           <Stat v={stat?.attackPoints ?? 0} l="공격P" />
           <Stat v={`${stat?.attendRate ?? 0}%`} l="출석률" />
-          <Stat v={stat?.mvp ?? 0} l="MOM" />
         </div>
       </div>
     </div>

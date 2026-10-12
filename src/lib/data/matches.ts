@@ -19,8 +19,7 @@ export type MatchRow = {
   youtube_url: string | null;
   status: string;
   cancel_reason: string | null;
-  mvp_member_id: string | null;
-  mom_vote_close: string | null;
+  formation_revision: number;
   result_revision: number;
 };
 
@@ -39,16 +38,11 @@ export function getCancelReasonLabel(reason: string | null) {
   return reason?.replace(/으로 취소$/, "") || "경기 취소";
 }
 
-// 서버 렌더링 시점 기준으로 MOM 투표 마감 여부를 계산한다.
-export function isMvpVoteClosed(momVoteClose: string | null, now = Date.now()) {
-  return !momVoteClose || now >= new Date(momVoteClose).getTime();
-}
-
 export async function getMatches(): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")
-    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id")
+    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, formation_revision, result_revision")
     .order("match_date", { ascending: false });
   if (error) {
     console.error("getMatches", error);
@@ -61,7 +55,7 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, mvp_member_id, mom_vote_close, result_revision")
+    .select("id, created_at, opponent, match_date, match_time, place, place_address, place_lat, place_lng, type, uniform, score_for, score_against, youtube_url, status, cancel_reason, formation_revision, result_revision")
     .eq("id", id)
     .maybeSingle();
   return (data as MatchRow) ?? null;
@@ -69,20 +63,21 @@ export async function getMatch(id: string): Promise<MatchRow | null> {
 
 export async function getMatchAttendances(matchId: string): Promise<AttendanceRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("attendances")
     .select("status, is_guest, members(id, name, position1, member_numbers(uniform, number))")
     .eq("match_id", matchId);
+  if (error) throw new Error("참석 명단을 불러오지 못했어요. 다시 시도해주세요.");
   return (data ?? []) as unknown as AttendanceRow[];
 }
 
-export type GoalRow = { id: string; scorer_id: string | null; assist_id: string | null; is_own_goal: boolean; assist_pending: boolean };
+export type GoalRow = { id: string; scorer_id: string | null; assist_id: string | null; scorer_guest_id: string | null; assist_guest_id: string | null; is_own_goal: boolean; assist_pending: boolean };
 
 export async function getMatchGoals(matchId: string): Promise<GoalRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("goals")
-    .select("id, scorer_id, assist_id, is_own_goal, assist_pending")
+    .select("id, scorer_id, assist_id, scorer_guest_id, assist_guest_id, is_own_goal, assist_pending")
     .eq("match_id", matchId)
     .order("created_at");
   if (error) throw new Error("득점 기록을 불러오지 못했어요. 다시 시도해주세요.");
@@ -92,10 +87,11 @@ export async function getMatchGoals(matchId: string): Promise<GoalRow[]> {
 // 회원별 참석 상태 맵 (운영진 참석 관리용)
 export async function getAttendanceMap(matchId: string) {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("attendances")
     .select("member_id, status, source")
     .eq("match_id", matchId);
+  if (error) throw new Error("참석 명단을 불러오지 못했어요. 다시 시도해주세요.");
   const map: Record<string, { status: "going" | "notGoing" | "undecided"; source: "self" | "manager" }> = {};
   for (const a of data ?? []) {
     map[a.member_id as string] = { status: a.status, source: a.source };
@@ -127,27 +123,9 @@ export async function getTeamStats(season?: number) {
   return { count, win, draw, loss, gf, ga, winRate: count ? Math.round((win / count) * 100) : 0 };
 }
 
-// MVP 투표 집계 + 내 투표
-export async function getMvpVotes(matchId: string, myMemberId: string | null) {
-  const supabase = await createClient();
-  const { data } = await supabase.from("mvp_votes").select("voter_id, target_id").eq("match_id", matchId);
-  const counts: Record<string, number> = {};
-  let myVote: string | null = null;
-  for (const v of data ?? []) {
-    counts[v.target_id] = (counts[v.target_id] ?? 0) + 1;
-    if (myMemberId && v.voter_id === myMemberId) myVote = v.target_id;
-  }
-  return { counts, myVote, total: data?.length ?? 0 };
-}
-
 // 현재 로그인 회원의 이 경기 참석 상태
 export async function getMyAttendance(matchId: string, memberId: string) {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("attendances")
-    .select("status")
-    .eq("match_id", matchId)
-    .eq("member_id", memberId)
-    .maybeSingle();
+  const { data } = await supabase.from("attendances").select("status").eq("match_id", matchId).eq("member_id", memberId).maybeSingle();
   return (data?.status as "going" | "notGoing" | "undecided" | undefined) ?? "undecided";
 }

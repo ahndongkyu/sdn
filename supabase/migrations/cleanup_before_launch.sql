@@ -2,8 +2,8 @@
 -- Supabase SQL Editor에서 실행. 프로필(auth)·관리자 회원·푸시 구독은 보존됩니다.
 begin;
 
--- 1) 매치 스코프 데이터 전부 삭제 (attendances/goals/formations/mvp_votes/guests 는 matches FK로 함께 정리되지만 명시)
-truncate goals, mvp_votes, formations, attendances, guests, matches restart identity cascade;
+-- 1) 매치 스코프 데이터 전부 삭제 (attendances/goals/formations/guests 는 matches FK로 함께 정리되지만 명시)
+truncate goals, formations, attendances, guests, matches restart identity cascade;
 
 -- 2) 공지사항 삭제
 truncate notices restart identity cascade;

@@ -10,6 +10,6 @@ export async function getGuests(matchId: string): Promise<GuestRow[]> {
     .select("id, name, position1")
     .eq("match_id", matchId)
     .order("created_at");
-  if (error) return []; // 테이블 미생성 등 — 안전하게 빈 배열
+  if (error) throw new Error("용병 명단을 불러오지 못했어요. 다시 시도해주세요.");
   return (data ?? []) as GuestRow[];
 }

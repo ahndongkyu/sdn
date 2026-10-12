@@ -10,7 +10,6 @@ const TABS: { label: string; unit: string; get: (s: MemberStat) => number }[] = 
   { label: "도움왕", unit: "도움", get: (s) => s.assists },
   { label: "공격P", unit: "P", get: (s) => s.attackPoints },
   { label: "출석왕", unit: "경기", get: (s) => s.games },
-  { label: "MOM", unit: "회", get: (s) => s.mvp },
 ];
 
 // 원 안 표시: 상세포지션 있으면 그걸(WF·CM…), 없으면 일반 포지션(FW/MF…)

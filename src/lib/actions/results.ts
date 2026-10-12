@@ -10,6 +10,8 @@ export type GoalInput = {
   id?: string;
   scorer_id: string | null;
   assist_id: string | null;
+  scorer_guest_id: string | null;
+  assist_guest_id: string | null;
   is_own_goal: boolean;
   assist_pending: boolean;
 };
@@ -41,7 +43,7 @@ export async function saveMatchRecord(
       if (match) {
         const memberIds = (attendances ?? []).map((a) => a.member_id as string);
         const label = match.type === "self" ? match.opponent : `vs ${match.opponent}`;
-        const body = `${scoreFor} : ${scoreAgainst} · MOM 투표에 참여해주세요`;
+        const body = `${scoreFor} : ${scoreAgainst} · 경기 기록을 확인해주세요`;
         await recordNotificationEvent(supabase, {
           kind: "result", referenceId: matchId, title: `${label} 경기 결과`, body,
           url: `/matches/${matchId}`, audience: "members", memberIds,

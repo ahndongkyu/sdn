@@ -31,5 +31,5 @@ export default async function MatchFormationPage({ params }: { params: Promise<{
 
   const details = [match.match_date, match.match_time?.slice(0, 5), match.place].filter(Boolean).join(" · ");
 
-  return <MatchFormation key={id} matchId={id} opponent={match.opponent} details={details} pool={pool} isManager={isManager} initial={initial} />;
+  return <MatchFormation key={`${id}:${profile?.id}`} userId={profile?.id ?? "anonymous"} revision={match.formation_revision} matchId={id} opponent={match.opponent} details={details} pool={pool} isManager={isManager} initial={initial} />;
 }

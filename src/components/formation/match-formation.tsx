@@ -10,17 +10,41 @@ import { effectiveLineup, PRESETS, QUARTERS, readLineup, serializeLineup, update
 import { createLineupImage } from "@/lib/lineup-image";
 import { toast } from "@/lib/toast";
 import { MatchWorkflow } from "@/components/match/match-workflow";
+import { DraftNotice } from "@/components/match/draft-notice";
 import { LineupPitch } from "./lineup-pitch";
 
 export type { PoolPlayer } from "@/lib/formation-layout";
 const secondary = "min-h-11 rounded-xl border border-line bg-card px-3 py-2 text-sm disabled:opacity-50";
 const primary = "min-h-12 w-full rounded-xl bg-accent px-3 py-3 text-sm font-bold text-white disabled:opacity-50";
 
-export function MatchFormation({ matchId, opponent, details, pool, isManager, initial }: {
-  matchId: string; opponent: string; details: string; pool: PoolPlayer[];
+export function MatchFormation({ matchId, userId, revision: serverRevision, opponent, details, pool, isManager, initial }: {
+  matchId: string; userId: string; revision: number; opponent: string; details: string; pool: PoolPlayer[];
   isManager: boolean; initial: FormationLayout | null;
 }) {
   const router = useRouter();
+  const storageKey = `formation:${userId}:${matchId}:v1`;
+  const [recovery, setRecovery] = useState<{ draft: LineupDraft; revision: number } | null>(null);
+  const [storageFailed, setStorageFailed] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const serverRevisionRef = useRef(serverRevision);
+  const storeDraft = useCallback((draft: LineupDraft) => {
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ draft, revision: serverRevisionRef.current })); }
+    catch { setStorageFailed(true); }
+  }, [storageKey]);
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (!active || !isManager) return;
+      try {
+        const raw = sessionStorage.getItem(storageKey);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved.draft?.base && saved.draft?.overrides && Number.isInteger(saved.revision)) setRecovery(saved);
+        }
+      } catch { setStorageFailed(true); }
+    });
+    return () => { active = false; };
+  }, [storageKey, isManager]);
   const [draft, setDraft] = useState(() => readLineup(initial, pool));
   const [quarter, setQuarter] = useState<number | "base">(isManager ? "base" : 1);
   const [expanded, setExpanded] = useState(false);
@@ -51,7 +75,17 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
     setSaveStatus("saving");
     const job = queueRef.current.catch(() => false).then(async () => {
       let ok = false;
-      try { ok = await saveFormation(matchId, serializeLineup(snapshot)); } catch { /* 재시도 버튼으로 복구 */ }
+      try {
+        const result = await saveFormation(matchId, serializeLineup(snapshot), serverRevisionRef.current);
+        ok = result.ok;
+        if (result.ok) {
+          serverRevisionRef.current = result.revision;
+          if (revision === revisionRef.current) {
+            try { sessionStorage.removeItem(storageKey); } catch { setStorageFailed(true); }
+          } else storeDraft(draftRef.current);
+          setSaveError("");
+        } else setSaveError(result.message);
+      } catch { setSaveError("연결을 확인하고 다시 저장해 주세요. 입력은 임시 보관되어 있어요."); }
       if (revision === revisionRef.current) {
         dirtyRef.current = !ok;
         setSaveStatus(ok ? "saved" : "error");
@@ -60,7 +94,7 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
     });
     queueRef.current = job;
     return job;
-  }, [matchId]);
+  }, [matchId, storageKey, storeDraft]);
 
   const flush = useCallback(async () => {
     if (!isManager) return true;
@@ -90,9 +124,10 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
     }
   }, [selected]);
 
-  function change(next: LineupDraft) {
-    if (!isManager || busy) return;
+  function change(next: LineupDraft, restoring = false) {
+    if (!isManager || busy || (recovery && !restoring)) return;
     setDraft(next); draftRef.current = next;
+    storeDraft(next);
     dirtyRef.current = true;
     const revision = ++revisionRef.current;
     setSaveStatus("dirty");
@@ -166,6 +201,16 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
       <button type="button" disabled={busy} onClick={() => shareOpen ? setSharing(false) : void navigate(`/matches/${matchId}`)} className="flex min-h-11 items-center gap-2 text-[15px] font-medium"><ArrowLeft size={20} />포메이션</button>
       {isManager && <span className="rounded-lg bg-tint px-2 py-1 text-xs text-accent">운영진</span>}
     </div>
+    {isManager && <DraftNotice available={Boolean(recovery)} storageFailed={storageFailed} restore={() => {
+      if (!recovery) return;
+      serverRevisionRef.current = recovery.revision;
+      const restored = readLineup(serializeLineup(recovery.draft), pool);
+      setRecovery(null); change(restored, true);
+    }} discard={() => {
+      try { sessionStorage.removeItem(storageKey); } catch { setStorageFailed(true); }
+      setRecovery(null);
+    }} />}
+    {saveError && <div role="alert" className="rounded-xl border border-danger/30 p-3 text-sm text-danger">{saveError}<button type="button" onClick={() => window.location.assign(`/matches/${matchId}`)} className="mt-2 block min-h-11 underline">입력 보관하고 최신 기록 보기</button></div>}
     {shareOpen ? <>
       <div className="flex items-center justify-between"><h1 className="text-base font-bold">라인업 공유 미리보기</h1><button type="button" aria-label="공유 미리보기 닫기" disabled={busy} onClick={() => setSharing(false)} className="flex size-11 items-center justify-center"><X size={20} /></button></div>
       <QuarterTabs value={shareQuarter} onChange={setShareQuarter} />
@@ -192,10 +237,10 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
       {!isManager && <QuarterTabs value={quarter as number} onChange={switchQuarter} />}
       <div ref={editorRef} className="scroll-mt-4 flex items-center justify-between gap-3">
         <div><h2 className="text-sm font-bold">{quarter === "base" ? "기본 라인업" : `${quarter}쿼터 라인업`}</h2><p className="mt-1 text-xs text-muted">{quarter === "base" ? customCount ? "별도 배치한 쿼터 제외 · 공통 적용" : "1~4쿼터 공통" : draft.overrides[quarter] ? "이 쿼터만 별도로 배치" : "기본 라인업 사용 중"}</p></div>
-        {isManager ? <label><span className="sr-only">포메이션 선택</span><select value={lineup.preset} disabled={selected !== null || busy} onChange={e => edit({ ...lineup, preset: e.target.value })} className="min-h-11 appearance-none rounded-xl border border-line bg-card px-3 text-base font-medium">{Object.keys(PRESETS).map(p => <option key={p}>{p}</option>)}</select></label> : <span className="text-sm text-muted">{lineup.preset}</span>}
+        {isManager ? <label><span className="sr-only">포메이션 선택</span><select value={lineup.preset} disabled={selected !== null || busy || Boolean(recovery)} onChange={e => edit({ ...lineup, preset: e.target.value })} className="min-h-11 appearance-none rounded-xl border border-line bg-card px-3 text-base font-medium">{Object.keys(PRESETS).map(p => <option key={p}>{p}</option>)}</select></label> : <span className="text-sm text-muted">{lineup.preset}</span>}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted"><span>{lineup.assignments.length} / 11명 배치</span>{isManager && <span role="status">{saveStatus === "error" ? <button type="button" onClick={() => void flush()} className="min-h-11 text-danger">저장 실패 · 다시 시도</button> : saveStatus === "saving" || saveStatus === "dirty" ? "저장 중…" : saveStatus === "idle" ? "자동 저장" : "자동 저장됨"}</span>}</div>
-      {selected === null ? <div ref={boardRef}><LineupPitch lineup={lineup} pool={pool} onSelect={isManager ? slot => setSelected(slot) : undefined} /><p className="mt-3 text-center text-xs text-muted">{isManager ? "빈 자리나 선수를 누르면 배치·교체할 수 있어요." : "쿼터를 눌러 선수 배치를 확인하세요."}</p></div> : <section ref={pickerRef} aria-label="선수 선택" className="min-h-[390px] rounded-2xl border border-line bg-card p-4" onKeyDown={e => { if (e.key === "Escape") closePicker(); }}>
+      {selected === null ? <div ref={boardRef}><LineupPitch lineup={lineup} pool={pool} onSelect={isManager && !recovery ? slot => setSelected(slot) : undefined} /><p className="mt-3 text-center text-xs text-muted">{isManager ? "빈 자리나 선수를 누르면 배치·교체할 수 있어요." : "쿼터를 눌러 선수 배치를 확인하세요."}</p></div> : <section ref={pickerRef} aria-label="선수 선택" className="min-h-[390px] rounded-2xl border border-line bg-card p-4" onKeyDown={e => { if (e.key === "Escape") closePicker(); }}>
         <div className="flex items-center justify-between"><h2 className="font-bold">{PRESETS[lineup.preset][selected].label} 선수 선택</h2><button type="button" aria-label="선수 선택 닫기" onClick={closePicker} className="flex size-11 items-center justify-center"><X size={20} /></button></div>
         <p className="mb-3 text-xs text-muted">현재 라인업에 아직 배치되지 않은 선수</p>
         <label><span className="sr-only">선수 이름 검색</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="이름 검색" className="input !text-base" /></label>
@@ -217,7 +262,7 @@ export function MatchFormation({ matchId, opponent, details, pool, isManager, in
           {quarter !== "base" && draft.overrides[quarter] && <button type="button" onClick={() => { const overrides = { ...draft.overrides }; delete overrides[quarter]; change({ ...draft, overrides }); setSelected(null); }} className="min-h-11 text-left text-sm text-accent">이 쿼터를 기본 라인업으로 되돌리기</button>}
         </div>}
       </section>}
-      <button type="button" onClick={() => { setShareQuarter(quarter === "base" ? 1 : quarter); setSharing(true); }} className={`${primary} flex items-center justify-center gap-2`}><Share2 size={17} />라인업 공유하기</button>
+      <button type="button" disabled={Boolean(recovery)} onClick={() => { setShareQuarter(quarter === "base" ? 1 : quarter); setSharing(true); }} className={`${primary} flex items-center justify-center gap-2`}><Share2 size={17} />라인업 공유하기</button>
       {isManager && <button type="button" disabled={busy} onClick={() => void navigate(`/admin/matches/${matchId}/result`)} className="min-h-11 w-full text-sm text-accent">경기 끝났나요? 결과 입력 →</button>}
     </>}
   </div>;

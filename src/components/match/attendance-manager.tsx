@@ -4,35 +4,39 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { saveAttendanceSelection } from "@/lib/actions/matches";
+import { useFormDraft } from "@/lib/hooks/use-form-draft";
+import { FixedFormActions } from "./fixed-form-actions";
+import { DraftNotice } from "./draft-notice";
 import { type Position } from "@/lib/mock";
 
 type St = "going" | "notGoing" | "undecided";
 type Member = { id: string; name: string; position1: Position };
 const labels: Record<St, string> = { going: "참석", notGoing: "불참", undecided: "미정" };
 
-export function AttendanceManager({ matchId, members, initial }: {
+export function AttendanceManager({ matchId, members, initial, userId, guestCount }: {
   matchId: string;
+  userId: string;
+  guestCount: number;
   members: Member[];
   initial: Record<string, { status: St; source: "self" | "manager" }>;
 }) {
   const router = useRouter();
-  const [changes, setChanges] = useState<Record<string, St>>({});
+  const draft = useFormDraft(`attendance:${userId}:${matchId}:v1`, { changes: {} as Record<string, St>, initial });
+  const { changes, initial: base } = draft.value;
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<St | "all">("all");
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
-  const statusOf = (id: string) => changes[id] ?? initial[id]?.status ?? "undecided";
+  const statusOf = (id: string) => changes[id] ?? base[id]?.status ?? "undecided";
   const counts = { going: 0, notGoing: 0, undecided: 0 };
   members.forEach((m) => counts[statusOf(m.id)]++);
   const visible = members.filter((m) => m.name.includes(query.trim()) && (filter === "all" || statusOf(m.id) === filter));
 
   function change(id: string, value: St) {
-    setChanges((previous) => {
-      const next = { ...previous };
-      if (value === (initial[id]?.status ?? "undecided")) delete next[id];
-      else next[id] = value;
-      return next;
-    });
+    const next = { ...changes };
+    if (value === (base[id]?.status ?? "undecided")) delete next[id];
+    else next[id] = value;
+    draft.change({ ...draft.value, changes: next });
   }
 
   function save(formation: boolean) {
@@ -40,9 +44,10 @@ export function AttendanceManager({ matchId, members, initial }: {
     start(async () => {
       try {
         const result = await saveAttendanceSelection(matchId, Object.entries(changes).map(([memberId, status]) => ({
-          memberId, status, expectedStatus: initial[memberId]?.status ?? null,
+          memberId, status, expectedStatus: base[memberId]?.status ?? null,
         })));
         if (!result.ok) { setError(result.message); return; }
+        draft.clear();
         router.push(`${formation ? `/matches/${matchId}/formation` : `/matches/${matchId}`}?toast=${encodeURIComponent(result.message)}`);
       } catch {
         setError("명단을 저장하지 못했어요. 선택은 유지되니 다시 시도해주세요.");
@@ -52,6 +57,7 @@ export function AttendanceManager({ matchId, members, initial }: {
 
   return (
     <div className="space-y-4">
+      <DraftNotice available={!!draft.recovery} restore={draft.restore} discard={draft.discard} storageFailed={draft.storageFailed} />
       <h2 className="text-xl font-bold tracking-tight">이번 경기, 누가 뛰나요?</h2>
       <p className="text-sm text-muted">참석할 회원을 선택해주세요.</p>
       <div className="flex items-center gap-2 rounded-xl border border-line bg-card px-3">
@@ -66,7 +72,7 @@ export function AttendanceManager({ matchId, members, initial }: {
           </button>
         ))}
       </div>
-      <fieldset disabled={pending} className="overflow-hidden rounded-2xl border border-line bg-card disabled:opacity-60">
+      <fieldset disabled={pending || !!draft.recovery} className="overflow-hidden rounded-2xl border border-line bg-card disabled:opacity-60">
         <legend className="sr-only">회원별 참석 여부</legend>
         {visible.map((m) => {
           const status = statusOf(m.id);
@@ -77,7 +83,7 @@ export function AttendanceManager({ matchId, members, initial }: {
                   aria-label={`${m.name} 참석`} className="h-5 w-5 shrink-0 accent-[var(--sdn-blue)]" />
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sunken text-xs text-muted">{m.position1}</span>
                 <span className="min-w-0"><span className="block break-words text-sm font-semibold">{m.name}</span>
-                  <span className="text-xs text-muted">{changes[m.id] ? "저장 대기" : initial[m.id]?.source === "self" ? "본인 투표" : initial[m.id]?.source === "manager" ? "운영진 등록" : "아직 응답 없음"}</span>
+                  <span className="text-xs text-muted">{changes[m.id] ? "저장 대기" : base[m.id]?.source === "self" ? "본인 투표" : base[m.id]?.source === "manager" ? "운영진 등록" : "아직 응답 없음"}</span>
                 </span>
               </label>
               <select aria-label={`${m.name} 참석 상태`} value={status} onChange={(e) => change(m.id, e.target.value as St)}
@@ -90,12 +96,12 @@ export function AttendanceManager({ matchId, members, initial }: {
         {visible.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted">해당하는 회원이 없어요.</p>}
       </fieldset>
       <p className="text-xs leading-relaxed text-muted">본인 투표도 같은 명단에 반영돼요. 선택 해제 시 미정으로 변경되며, 불참은 상태에서 선택할 수 있어요.</p>
-      <div className="space-y-3 rounded-2xl border border-line bg-card p-4">
-        <div className="flex items-center justify-between"><strong className="text-sm" aria-live="polite">참석 {counts.going}명</strong><span className="text-xs text-muted">{Object.keys(changes).length}명 변경 · 선택 후 저장</span></div>
-        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
-        <button type="button" disabled={pending} onClick={() => save(false)} className="min-h-12 w-full rounded-xl bg-accent px-4 font-semibold text-white disabled:opacity-50">{pending ? "저장 중…" : "참석 명단 저장 →"}</button>
-        <button type="button" disabled={pending} onClick={() => save(true)} className="min-h-11 w-full text-sm font-medium text-accent disabled:opacity-50">저장하고 포메이션 만들기</button>
-      </div>
+      <FixedFormActions>
+        <div className="flex items-center justify-between"><strong className="text-sm" aria-live="polite">참석 {counts.going + guestCount}명</strong><span className="text-xs text-muted">{Object.keys(changes).length}명 변경 · 임시 보관</span></div>
+        {error && <div role="alert" className="text-sm text-danger">{error}<button type="button" onClick={() => window.location.assign(`/matches/${matchId}`)} className="block min-h-11 text-accent">입력 보관하고 최신 기록 보기</button></div>}
+        <button type="button" disabled={pending || !!draft.recovery} onClick={() => save(true)} className="min-h-12 w-full rounded-xl bg-accent px-4 font-semibold text-white disabled:opacity-50">{pending ? "저장 중…" : "저장하고 포메이션 만들기 →"}</button>
+        <button type="button" disabled={pending || !!draft.recovery} onClick={() => save(false)} className="min-h-11 w-full text-sm font-medium text-accent disabled:opacity-50">저장하고 나가기</button>
+      </FixedFormActions>
     </div>
   );
 }

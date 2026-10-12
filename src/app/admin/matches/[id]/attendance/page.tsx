@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getMatch, getAttendanceMap } from "@/lib/data/matches";
 import { getMembers } from "@/lib/data/members";
+import { getMyProfile } from "@/lib/data/auth";
 import { getGuests } from "@/lib/data/guests";
 import { AttendanceManager } from "@/components/match/attendance-manager";
 import { MatchWorkflow } from "@/components/match/match-workflow";
@@ -13,10 +14,10 @@ export default async function AttendancePage({ params }: { params: Promise<{ id:
   const match = await getMatch(id);
   if (!match) notFound();
 
-  const [members, map, guests] = await Promise.all([getMembers(), getAttendanceMap(id), getGuests(id)]);
+  const [members, map, guests, profile] = await Promise.all([getMembers(), getAttendanceMap(id), getGuests(id), getMyProfile()]);
 
   return (
-    <div className="space-y-4">
+    <div data-match-form className="space-y-4 pb-44">
       <div className="mb-1 flex items-center gap-2">
         <Link href={`/matches/${id}`} aria-label="경기 상세로" className="flex min-h-11 min-w-11 items-center justify-center rounded-xl">
           <ArrowLeft size={20} className="text-muted" aria-hidden />
@@ -31,6 +32,9 @@ export default async function AttendancePage({ params }: { params: Promise<{ id:
         <div className="rounded-xl border border-divider bg-card soft-card px-4 py-10 text-center text-sm text-muted">등록된 회원이 없어요.</div>
       ) : (
         <AttendanceManager
+          key={`${id}:${profile?.id}`}
+          userId={profile?.id ?? ""}
+          guestCount={guests.length}
           matchId={id}
           members={members.map((m) => ({ id: m.id, name: m.name, position1: m.position1 }))}
           initial={map}
