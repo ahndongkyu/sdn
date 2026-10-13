@@ -2,13 +2,19 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, UserPlus, Pencil, ArrowLeft } from "lucide-react";
-import { POSITION_BADGE } from "@/lib/mock";
-import type { MemberRow } from "@/lib/data/members";
+import { Search, UserPlus, Pencil, ArrowLeft, Link2, Link2Off } from "lucide-react";
+import { POSITION_BADGE, type Position } from "@/lib/mock";
+import type { AdminMemberRow } from "@/lib/data/members";
 
 const CHO = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
 const MERGE: Record<string, string> = { "ㄲ": "ㄱ", "ㄸ": "ㄷ", "ㅃ": "ㅂ", "ㅆ": "ㅅ", "ㅉ": "ㅈ" };
 const INDEX = ["ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"];
+const POSITIONS: ("all" | Position)[] = ["all", "FW", "MF", "DF", "GK"];
+const LINK_FILTERS = [
+  { value: "all", label: "전체" },
+  { value: "linked", label: "연결됨" },
+  { value: "unlinked", label: "미연결" },
+] as const;
 
 function chosung(name: string): string {
   const c = name.charCodeAt(0);
@@ -19,8 +25,10 @@ function chosung(name: string): string {
   return "#";
 }
 
-export function MemberIndexList({ members }: { members: MemberRow[] }) {
+export function MemberIndexList({ members }: { members: AdminMemberRow[] }) {
   const [q, setQ] = useState("");
+  const [position, setPosition] = useState<"all" | Position>("all");
+  const [linkFilter, setLinkFilter] = useState<(typeof LINK_FILTERS)[number]["value"]>("all");
   const listRef = useRef<HTMLDivElement>(null);
   const idxRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +36,10 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
     const query = q.trim();
     const filtered = members
       .filter((m) => m.name.includes(query))
+      .filter((m) => position === "all" || m.position1 === position)
+      .filter((m) => linkFilter === "all" || (linkFilter === "linked" ? m.kakaoLinked : !m.kakaoLinked))
       .sort((a, b) => a.name.localeCompare(b.name, "ko"));
-    const map = new Map<string, MemberRow[]>();
+    const map = new Map<string, AdminMemberRow[]>();
     for (const m of filtered) {
       const c = chosung(m.name);
       (map.get(c) ?? map.set(c, []).get(c)!).push(m);
@@ -40,7 +50,7 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
       const ib = INDEX.indexOf(b[0]);
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     });
-  }, [members, q]);
+  }, [linkFilter, members, position, q]);
 
   const present = new Set(groups.map((g) => g[0]));
 
@@ -72,8 +82,41 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름 검색" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-subtle" />
       </div>
 
+      <div className="mb-2.5 flex gap-1.5 overflow-x-auto no-scrollbar">
+        {POSITIONS.map((value) => {
+          const active = position === value;
+          const label = value === "all" ? "전체 포지션" : value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPosition(value)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold ${active ? "border-navy bg-navy text-white" : "border-divider bg-card text-muted"}`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mb-3 flex gap-1.5">
+        {LINK_FILTERS.map((filter) => {
+          const active = linkFilter === filter.value;
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setLinkFilter(filter.value)}
+              className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ${active ? "bg-tint text-accent" : "bg-sunken text-subtle"}`}
+            >
+              {filter.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="relative">
-        <div ref={listRef} className="no-scrollbar relative max-h-[calc(100dvh-190px)] overflow-y-auto rounded-xl border border-line bg-card pr-4 soft-card">
+        <div ref={listRef} className="no-scrollbar relative max-h-[calc(100dvh-272px)] overflow-y-auto rounded-xl border border-line bg-card pr-4 soft-card">
           {groups.length === 0 ? (
             <div className="py-10 text-center text-[13px] text-subtle">검색 결과가 없어요.</div>
           ) : (
@@ -89,6 +132,10 @@ export function MemberIndexList({ members }: { members: MemberRow[] }) {
                         <span className="truncate">{m.name}</span>
                         {m.role === "manager" && <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold text-white">{m.title ?? "운영진"}</span>}
                       </div>
+                      <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${m.kakaoLinked ? "bg-tint text-accent" : "border border-divider bg-card text-subtle"}`}>
+                        {m.kakaoLinked ? <Link2 size={11} /> : <Link2Off size={11} />}
+                        {m.kakaoLinked ? "카카오 연결" : "미연결"}
+                      </span>
                       <Pencil size={14} className="shrink-0 text-faint" />
                     </Link>
                   );

@@ -12,6 +12,10 @@ export type MemberRow = {
   member_numbers: { uniform: string; number: number }[];
 };
 
+export type AdminMemberRow = MemberRow & {
+  kakaoLinked: boolean;
+};
+
 export async function getMembers(): Promise<MemberRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -24,6 +28,26 @@ export async function getMembers(): Promise<MemberRow[]> {
     return [];
   }
   return (data ?? []) as MemberRow[];
+}
+
+// 운영진 회원 관리용. 카카오 연결 여부는 일반 회원 목록에 노출하지 않는다.
+export async function getAdminMembers(): Promise<AdminMemberRow[]> {
+  const supabase = await createClient();
+  const [members, profilesRes] = await Promise.all([
+    getMembers(),
+    supabase.from("profiles").select("member_id").not("member_id", "is", null),
+  ]);
+  if (profilesRes.error) {
+    throw new Error("카카오 계정 연결 상태를 불러오지 못했어요. 다시 시도해주세요.");
+  }
+  const linkedMemberIds = new Set(
+    (profilesRes.data ?? []).flatMap((profile) => profile.member_id ? [profile.member_id] : []),
+  );
+
+  return members.map((member) => ({
+    ...member,
+    kakaoLinked: linkedMemberIds.has(member.id),
+  }));
 }
 
 export async function getMemberById(id: string): Promise<MemberRow | null> {
