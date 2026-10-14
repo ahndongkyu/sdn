@@ -1,3 +1,4 @@
+import { lineupPositionColor } from "./lineup-colors";
 import { effectiveLineup, PRESETS, QUARTERS, type LineupDraft, type PoolPlayer } from "./formation-layout";
 
 export async function createLineupImage(draft: LineupDraft, pool: PoolPlayer[], opponent: string, details: string): Promise<Blob> {
@@ -8,7 +9,7 @@ export async function createLineupImage(draft: LineupDraft, pool: PoolPlayer[], 
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("이미지를 만들 수 없어요");
   // 공유 파일은 수신자의 화면 테마와 관계없이 동일하게 보인다.
-  const ink = "#172333", muted = "#667486", grass = "#e3eee9", mark = "#b7d0c3";
+  const ink = "#172333", muted = "#667486", grass = "#deebe2", stripe = "#d3e4d9", mark = "#8aaa97";
   const font = getComputedStyle(document.body).fontFamily;
   function text(value: string, x: number, y: number, size: number, maxWidth: number, color = ink) {
     ctx!.fillStyle = color;
@@ -25,6 +26,9 @@ export async function createLineupImage(draft: LineupDraft, pool: PoolPlayer[], 
     text(`${q}쿼터`, x, y - 32, 42, 600);
     ctx.textAlign = "right"; text(lineup.preset, x + width, y - 32, 34, 400, muted); ctx.textAlign = "left";
     ctx.fillStyle = grass; ctx.fillRect(x, y, width, height);
+    for (let band = 1; band < 8; band += 2) {
+      ctx.fillStyle = stripe; ctx.fillRect(x, y + height * band / 8, width, height / 8);
+    }
     ctx.strokeStyle = mark; ctx.lineWidth = 3;
     ctx.strokeRect(x + 26, y + 26, width - 52, height - 52);
     ctx.beginPath(); ctx.moveTo(x + 26, y + height / 2); ctx.lineTo(x + width - 26, y + height / 2); ctx.stroke();
@@ -34,10 +38,14 @@ export async function createLineupImage(draft: LineupDraft, pool: PoolPlayer[], 
     PRESETS[lineup.preset].forEach((slot, i) => {
       const player = pool.find(p => p.id === lineup.assignments.find(a => a.slot === i)?.memberId);
       const px = x + width * slot.x / 100, py = y + height * slot.y / 100;
+      const color = lineupPositionColor(slot.label);
+      ctx.strokeStyle = player ? color.border : mark;
+      ctx.setLineDash(player ? [] : [8, 6]);
       ctx.beginPath(); ctx.arc(px, py - 18, 48, 0, Math.PI * 2);
-      ctx.fillStyle = player ? "#ffffff" : grass; ctx.fill(); ctx.stroke();
+      ctx.fillStyle = player ? color.background : grass; ctx.fill(); ctx.stroke();
+      ctx.setLineDash([]);
       ctx.textAlign = "center";
-      text(slot.label, px, py - 7, 29, 90, "#376654");
+      text(slot.label, px, py - 7, 29, 90, player ? color.foreground : muted);
       text(player?.name ?? "미배정", px, py + 66, 38, 190, player ? ink : muted);
       ctx.textAlign = "left";
     });
